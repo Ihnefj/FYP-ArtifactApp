@@ -4,6 +4,7 @@ import FoodListScreen from './src/components/screens/foodscreens/FoodListScreen.
 import FoodAddScreen from './src/components/screens/foodscreens/FoodAddScreen.js';
 import FoodViewScreen from './src/components/screens/foodscreens/FoodViewScreen.js';
 import FoodModifyScreen from './src/components/screens/foodscreens/FoodModifyScreen.js';
+import FoodOverviewScreen from './src/components/screens/foodscreens/FoodOverviewScreen.js';
 import SettingsScreen from './src/components/screens/drawerscreens/settingsscreens/SettingsScreen';
 import ProfileScreen from './src/components/screens/drawerscreens/settingsscreens/ProfileScreen';
 import GoalsScreen from './src/components/screens/drawerscreens/settingsscreens/GoalsScreen';
@@ -97,6 +98,12 @@ export const FoodStack = () => {
         name='FoodModifyScreen'
         component={FoodModifyScreen}
         options={{ title: 'Modify food' }}
+      />
+
+      <Stack.Screen
+        name='FoodOverviewScreen'
+        component={FoodOverviewScreen}
+        options={{ title: 'Add to meal' }}
       />
     </Stack.Navigator>
   );

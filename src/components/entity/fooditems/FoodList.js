@@ -1,54 +1,41 @@
-import { ScrollView, StyleSheet, Text } from 'react-native';
-import FoodItemForm from './FoodItemForm.js';
+import { ScrollView } from 'react-native';
 import FoodItem from './FoodItem.js';
 
-const FoodList = ({ foods, onSelect }) => {
+const FoodList = ({ meals = {}, onSelect, onDelete, onUpdate }) => {
   // Initialisations ---------------------
   // State -------------------------------
   // Handlers ----------------------------
   // View --------------------------------
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.boldText}>Breakfast</Text>
-      {foods.map((food) => {
-        return <FoodItem key={food.FoodID} food={food} onSelect={onSelect} />;
-      })}
-      <Text style={styles.boldText}>Lunch</Text>
-      {foods.map((food) => {
-        return <FoodItem key={food.FoodID} food={food} onSelect={onSelect} />;
-      })}
-      <Text style={styles.boldText}>Dinner</Text>
-      {foods.map((food) => {
-        return <FoodItem key={food.FoodID} food={food} onSelect={onSelect} />;
-      })}
-      <Text style={styles.boldText}>Snacks</Text>
-      {foods.map((food) => {
-        return <FoodItem key={food.FoodID} food={food} onSelect={onSelect} />;
-      })}
+    <ScrollView>
+      {Object.entries(meals).map(([mealType, foods]) => (
+        <FoodSection
+          key={mealType}
+          mealType={mealType}
+          foods={foods}
+          onSelect={onSelect}
+          onDelete={onDelete}
+          onUpdate={onUpdate}
+        />
+      ))}
     </ScrollView>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    gap: 15
-  },
-  image: {
-    borderRadius: 3
-  },
-  infoTray: {
-    gap: 5
-  },
-  text: {
-    fontSize: 16
-  },
-  boldText: {
-    fontSize: 18,
-    fontWeight: 'bold'
-  },
-  dimText: {
-    color: 'grey'
-  }
-});
+const FoodSection = ({ foods, mealType, onSelect, onDelete, onUpdate }) => {
+  return (
+    <>
+      {foods.map((food) => (
+        <FoodItem
+          key={food.uniqueID}
+          food={food}
+          onSelect={() => onSelect(food, mealType)}
+          onDelete={() => onDelete(food, mealType)}
+          onUpdate={(newAmount) => onUpdate(food, newAmount, mealType)}
+        />
+      ))}
+    </>
+  );
+};
 
 export default FoodList;

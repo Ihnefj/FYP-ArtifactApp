@@ -3,7 +3,8 @@ import {
   Feather,
   FontAwesome6,
   AntDesign,
-  Ionicons
+  Ionicons,
+  MaterialCommunityIcons
 } from '@expo/vector-icons';
 
 const Icons = {};
@@ -22,6 +23,7 @@ const Settings = () => <Feather name='settings' size={16} />;
 const Signin = () => <AntDesign name='login' size={16} />;
 const Book = () => <Ionicons name='book-outline' size={16} />;
 const Help = () => <Feather name='help-circle' size={16} />;
+const Eye = () => <MaterialCommunityIcons name='eye-outline' size={16} />;
 
 // Compose
 Icons.Add = Add;
@@ -38,5 +40,6 @@ Icons.Settings = Settings;
 Icons.Signin = Signin;
 Icons.Book = Book;
 Icons.Help = Help;
+Icons.Eye = Eye;
 
 export default Icons;
