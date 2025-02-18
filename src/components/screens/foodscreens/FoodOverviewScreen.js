@@ -12,7 +12,8 @@ const FoodOverviewScreen = () => {
   ]);
   const route = useRoute();
   const navigation = useNavigation();
-  const { mealType } = route.params;
+  const mealType = route.params?.mealType || 'Breakfast';
+
   // State -----------------------------------
 
   const [searchQuery, setSearchQuery] = useState('');

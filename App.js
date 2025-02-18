@@ -8,16 +8,20 @@ import FoodOverviewScreen from './src/components/screens/foodscreens/FoodOvervie
 import SettingsScreen from './src/components/screens/drawerscreens/settingsscreens/SettingsScreen';
 import ProfileScreen from './src/components/screens/drawerscreens/settingsscreens/ProfileScreen';
 import GoalsScreen from './src/components/screens/drawerscreens/settingsscreens/GoalsScreen';
+import ProgressScreen from './src/components/screens/ProgressScreen.js';
+import BarcodeScreen from './src/components/screens/BarcodeScreen.js';
 import Icons from './src/components/UI/Icons';
 import 'react-native-gesture-handler';
 import { createDrawerNavigator } from '@react-navigation/drawer';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { registerRootComponent } from 'expo';
+import FoodOverview from './src/components/entity/fooditems/FoodOverview.js';
 
 registerRootComponent(App);
 
 const Stack = createNativeStackNavigator();
-
 const Drawer = createDrawerNavigator();
+const Tab = createBottomTabNavigator();
 
 function App() {
   return (
@@ -35,7 +39,7 @@ function App() {
             headerTintColor: '#665679'
           }}
           name='Home'
-          component={FoodStack}
+          component={BottomTabNavigator}
         />
         <Drawer.Screen
           options={{
@@ -149,5 +153,42 @@ export const SettingsStack = () => {
     </Stack.Navigator>
   );
 };
+
+function BottomTabNavigator() {
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        tabBarActiveTintColor: '#DCD6F7',
+        tabBarInactiveTintColor: '#665679',
+        tabBarStyle: {
+          backgroundColor: '#F4F2FF',
+          borderTopWidth: 0,
+          elevation: 0
+        }
+      }}
+    >
+      <Tab.Screen
+        name='Home'
+        component={FoodListScreen}
+        options={{ tabBarIcon: () => <Icons.Home />, headerShown: false }}
+      />
+      <Tab.Screen
+        name='Food'
+        component={FoodOverviewScreen}
+        options={{ tabBarIcon: () => <Icons.Food />, headerShown: false }}
+      />
+      <Tab.Screen
+        name='Progress'
+        component={ProgressScreen}
+        options={{ tabBarIcon: () => <Icons.Progress />, headerShown: false }}
+      />
+      <Tab.Screen
+        name='Scanner'
+        component={BarcodeScreen}
+        options={{ tabBarIcon: () => <Icons.Scanner />, headerShown: false }}
+      />
+    </Tab.Navigator>
+  );
+}
 
 export default App;

@@ -26,6 +26,15 @@ const Help = () => <Feather name='help-circle' size={16} color='#665679' />;
 const Eye = () => (
   <MaterialCommunityIcons name='eye-outline' size={16} color='#665679' />
 );
+const Food = () => (
+  <MaterialCommunityIcons name='food-fork-drink' size={16} color='#665679' />
+);
+const Progress = () => (
+  <MaterialIcons name='auto-graph' size={16} color='#665679' />
+);
+const Scanner = () => (
+  <Ionicons name='barcode-sharp' size={16} color='#665679' />
+);
 
 // Compose
 Icons.Add = Add;
@@ -43,5 +52,8 @@ Icons.Signin = Signin;
 Icons.Book = Book;
 Icons.Help = Help;
 Icons.Eye = Eye;
+Icons.Food = Food;
+Icons.Progress = Progress;
+Icons.Scanner = Scanner;
 
 export default Icons;
