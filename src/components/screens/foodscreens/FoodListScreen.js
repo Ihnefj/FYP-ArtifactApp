@@ -9,9 +9,11 @@ import {
   Alert
 } from 'react-native';
 import Screen from '../../layout/Screen.js';
+import * as Progress from 'react-native-progress';
 import Icons from '../../UI/Icons.js';
 import FoodList from '../../entity/fooditems/FoodList.js';
 import Meals from '../../entity/fooditems/Meals.js';
+import { format, addDays, subDays } from 'date-fns';
 
 const FoodListScreen = ({ navigation }) => {
   // Initialisations -------------------------
@@ -19,53 +21,98 @@ const FoodListScreen = ({ navigation }) => {
     'Non-serializable values were found in the navigation state'
   ]);
 
+  const mealsInstance = Meals();
+
   // State -----------------------------------
 
-  const mealsInstance = Meals();
-  const [meals, setMeals] = useState(
-    mealsInstance.getMeals() || {
-      Breakfast: [],
-      Lunch: [],
-      Dinner: [],
-      Snacks: []
-    }
-  );
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const formattedDate = format(selectedDate, 'yyyy-MM-dd');
+  const [mealsByDate, setMealsByDate] = useState({});
+  const [meals, setMeals] = useState({
+    Breakfast: [],
+    Lunch: [],
+    Dinner: [],
+    Snacks: []
+  });
+
   const [totalCalories, setTotalCalories] = useState({});
+
+  const [dailyCalorieGoal, setDailyCalorieGoal] = useState(1700);
+
+  const [totalMacros, setTotalMacros] = useState({
+    Protein: 0,
+    Carbs: 0,
+    Fat: 0
+  });
 
   // Handlers --------------------------------
 
-  const recalculateTotalCalories = () => {
-    const newTotals = {};
-    Object.entries(meals).forEach(([mealType, foods]) => {
-      newTotals[mealType] = foods.reduce(
-        (sum, food) =>
-          sum + (!isNaN(food.FoodCalories) ? food.FoodCalories : 0),
-        0
-      );
-    });
-    setTotalCalories(newTotals);
-  };
+  const totalCaloriesForDay = Object.values(totalCalories).reduce(
+    (sum, kcal) => sum + kcal,
+    0
+  );
+
+  const progress = Math.min(totalCaloriesForDay / dailyCalorieGoal, 1);
 
   useEffect(() => {
-    const newTotals = {};
+    if (mealsByDate[formattedDate]) {
+      setMeals(mealsByDate[formattedDate]);
+    } else {
+      const storedMeals = mealsInstance.getMeals(formattedDate);
+      setMeals(storedMeals);
+      setMealsByDate((prev) => ({ ...prev, [formattedDate]: storedMeals }));
+    }
+  }, [formattedDate]);
+
+  useEffect(() => {
+    recalculateTotals();
+  }, [meals]);
+
+  const recalculateTotals = () => {
+    const newTotals = { Calories: {}, Protein: 0, Carbs: 0, Fat: 0 };
+
     Object.entries(meals).forEach(([mealType, foods]) => {
-      newTotals[mealType] = foods.reduce(
+      newTotals.Calories[mealType] = foods.reduce(
         (sum, food) =>
           sum + (!isNaN(food.FoodCalories) ? food.FoodCalories : 0),
         0
       );
+      newTotals.Protein += foods.reduce(
+        (sum, food) => sum + (!isNaN(food.FoodProtein) ? food.FoodProtein : 0),
+        0
+      );
+      newTotals.Carbs += foods.reduce(
+        (sum, food) => sum + (!isNaN(food.FoodCarbs) ? food.FoodCarbs : 0),
+        0
+      );
+      newTotals.Fat += foods.reduce(
+        (sum, food) => sum + (!isNaN(food.FoodFat) ? food.FoodFat : 0),
+        0
+      );
     });
-    setTotalCalories(newTotals);
-  }, [meals]);
+
+    setTotalCalories(newTotals.Calories);
+    setTotalMacros({
+      Protein: newTotals.Protein,
+      Carbs: newTotals.Carbs,
+      Fat: newTotals.Fat
+    });
+  };
 
   const handleAddFood = (food, mealType) => {
-    const uniqueFood = { ...food, uniqueID: `${food.FoodID}-${Date.now()}` };
-    const updatedMeals = {
-      ...meals,
-      [mealType]: [...meals[mealType], uniqueFood]
-    };
-    mealsInstance.updateMeals(updatedMeals);
-    setMeals(updatedMeals);
+    setMeals((prevMeals) => {
+      const updatedMeals = {
+        ...prevMeals,
+        [mealType]: [
+          ...(prevMeals[mealType] || []),
+          { ...food, uniqueID: `${food.FoodID}-${Date.now()}` }
+        ]
+      };
+
+      setMealsByDate((prev) => ({ ...prev, [formattedDate]: updatedMeals }));
+      mealsInstance.updateMeals(formattedDate, updatedMeals);
+      return updatedMeals;
+    });
   };
 
   const handleClearMeal = (mealType) => {
@@ -77,10 +124,20 @@ const FoodListScreen = ({ navigation }) => {
         {
           text: 'Clear All',
           onPress: () => {
-            meals[mealType] = [];
-            v;
-            mealsInstance.updateMeals(meals);
-            setMeals({ ...meals });
+            setMealsByDate((prevMealsByDate) => {
+              const updatedMeals = {
+                ...prevMealsByDate,
+                [formattedDate]: {
+                  ...prevMealsByDate[formattedDate],
+                  [mealType]: prevMealsByDate[formattedDate]?.[mealType].filter(
+                    (food) => food.uniqueID !== foodToDelete.uniqueID
+                  )
+                }
+              };
+
+              mealsInstance.updateMeals(updatedMeals[formattedDate]); // Update Meals.js instance
+              return updatedMeals;
+            });
           }
         }
       ]
@@ -97,15 +154,20 @@ const FoodListScreen = ({ navigation }) => {
           text: 'Delete',
           onPress: () => {
             setMeals((prevMeals) => {
-              const updatedMeals = { ...prevMeals };
-              updatedMeals[mealType] = updatedMeals[mealType].filter(
-                (food) => food.FoodID !== foodToDelete.FoodID
-              );
+              const updatedMeals = {
+                ...prevMeals,
+                [mealType]: prevMeals[mealType].filter(
+                  (food) => food.uniqueID !== foodToDelete.uniqueID
+                )
+              };
 
-              return { ...updatedMeals };
+              setMealsByDate((prev) => ({
+                ...prev,
+                [formattedDate]: updatedMeals
+              }));
+              mealsInstance.updateMeals(formattedDate, updatedMeals);
+              return updatedMeals;
             });
-
-            recalculateTotalCalories();
           }
         }
       ]
@@ -115,43 +177,21 @@ const FoodListScreen = ({ navigation }) => {
   const handleModifyFood = (updatedFood) => {
     setMeals((prevMeals) => {
       const updatedMeals = { ...prevMeals };
-
       Object.keys(updatedMeals).forEach((mealType) => {
         updatedMeals[mealType] = updatedMeals[mealType].map((food) =>
-          food.FoodID === updatedFood.FoodID ? updatedFood : food
+          food.uniqueID === updatedFood.uniqueID ? updatedFood : food
         );
       });
 
-      return { ...updatedMeals };
+      setMealsByDate((prev) => ({ ...prev, [formattedDate]: updatedMeals }));
+      mealsInstance.updateMeals(formattedDate, updatedMeals);
+      return updatedMeals;
     });
-  };
-
-  const gotoFoodView = (food, mealType) => {
-    navigation.navigate('FoodViewScreen', {
-      food,
-      mealType,
-      onDelete: handleDeleteFood,
-      onModify: handleModifyFood
-    });
-  };
-
-  const gotoFoodOverview = (mealType) => {
-    navigation.navigate('FoodOverviewScreen', {
-      mealType,
-      onAddFood: handleAddFood
-    });
-  };
-
-  const getTotalCalories = (foods) => {
-    return foods.reduce(
-      (sum, food) => sum + (!isNaN(food.FoodCalories) ? food.FoodCalories : 0),
-      0
-    );
   };
 
   const handleUpdate = (foodToUpdate, newAmount, mealType) => {
     setMeals((prevMeals) => {
-      const updatedMeals = JSON.parse(JSON.stringify(prevMeals));
+      const updatedMeals = { ...prevMeals };
 
       updatedMeals[mealType] = updatedMeals[mealType].map((food) => {
         if (food.uniqueID === foodToUpdate.uniqueID) {
@@ -172,25 +212,83 @@ const FoodListScreen = ({ navigation }) => {
         return food;
       });
 
-      const newTotals = {};
-      Object.entries(updatedMeals).forEach(([mealType, foods]) => {
-        newTotals[mealType] = foods.reduce(
-          (sum, food) =>
-            sum + (!isNaN(food.FoodCalories) ? food.FoodCalories : 0),
-          0
-        );
-      });
-
-      setTotalCalories(newTotals);
+      mealsInstance.updateMeals(updatedMeals);
+      recalculateTotals(updatedMeals);
       return updatedMeals;
     });
   };
 
+  const gotoFoodView = (food, mealType) => {
+    navigation.navigate('FoodViewScreen', {
+      food,
+      mealType,
+      onDelete: handleDeleteFood,
+      onModify: handleModifyFood
+    });
+  };
+
+  const gotoFoodOverview = (mealType) => {
+    navigation.navigate('FoodOverviewScreen', {
+      mealType,
+      onAddFood: handleAddFood
+    });
+  };
+
+  const goToPreviousDay = () =>
+    setSelectedDate((prevDate) => subDays(prevDate, 1));
+  const goToNextDay = () => setSelectedDate((prevDate) => addDays(prevDate, 1));
+
   // View ------------------------------------
   return (
     <Screen>
-      <Text style={styles.header}>Food Diary</Text>
+      <View style={styles.dateContainer}>
+        <TouchableOpacity onPress={goToPreviousDay} style={styles.dateButton}>
+          <Text style={styles.dateButtonText}>{'<'}</Text>
+        </TouchableOpacity>
+        <Text style={styles.dateText}>
+          {format(selectedDate, 'EEEE, dd MMM yyyy')}
+        </Text>
+        <TouchableOpacity onPress={goToNextDay} style={styles.dateButton}>
+          <Text style={styles.dateButtonText}>{'>'}</Text>
+        </TouchableOpacity>
+      </View>
+
       <ScrollView>
+        <View style={styles.headerContainer}>
+          <Progress.Circle
+            size={100}
+            progress={Math.min(
+              Object.values(totalCalories).reduce(
+                (sum, kcal) => sum + kcal,
+                0
+              ) / dailyCalorieGoal,
+              1
+            )}
+            showsText={true}
+            color='#E6E6FA'
+            borderWidth={3}
+            textStyle={styles.progressText}
+            formatText={() =>
+              `${Math.round(
+                Object.values(totalCalories).reduce(
+                  (sum, kcal) => sum + kcal,
+                  0
+                )
+              )} / ${dailyCalorieGoal}`
+            }
+          />
+          <View>
+            <Text style={styles.nutrientLabel}>
+              {Math.round(totalMacros.Protein)}g Protein
+            </Text>
+            <Text style={styles.nutrientLabel}>
+              {Math.round(totalMacros.Carbs)}g Carbs
+            </Text>
+            <Text style={styles.nutrientLabel}>
+              {Math.round(totalMacros.Fat)}g Fat
+            </Text>
+          </View>
+        </View>
         {Object.entries(meals || {}).map(([mealType, foods = []]) => (
           <View key={mealType} style={styles.mealSection}>
             <View style={styles.mealHeader}>
@@ -200,7 +298,10 @@ const FoodListScreen = ({ navigation }) => {
                   {Math.round(totalCalories[mealType] || 0)} kcal
                 </Text>
               </Text>
-              <TouchableOpacity onPress={() => gotoFoodOverview(mealType)}>
+              <TouchableOpacity
+                onPress={() => gotoFoodOverview(mealType)}
+                style={styles.addButton}
+              >
                 <Icons.Add />
               </TouchableOpacity>
             </View>
@@ -210,11 +311,8 @@ const FoodListScreen = ({ navigation }) => {
             ) : (
               <FoodList
                 meals={meals}
-                onSelect={(food, mealType) => gotoFoodView(food, mealType)}
-                onDelete={(food, mealType) => handleDeleteFood(food, mealType)}
-                onUpdate={(food, newAmount, mealType) =>
-                  handleUpdate(food, newAmount, mealType)
-                }
+                onSelect={handleModifyFood}
+                onDelete={handleDeleteFood}
               />
             )}
           </View>
@@ -225,32 +323,88 @@ const FoodListScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  header: {
-    fontSize: 22,
+  dateText: {
+    fontSize: 18,
     fontWeight: 'bold',
+    textAlign: 'center',
     marginBottom: 10,
-    textAlign: 'center'
+    color: '#665679'
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 10
+  },
+  progressText: {
+    fontSize: 14,
+    fontWeight: 'semi-bold',
+    color: '#665679'
+  },
+  nutrientLabel: {
+    fontSize: 16,
+    marginVertical: 2,
+    color: '#C4C3D0'
   },
   mealSection: {
-    marginBottom: 15,
+    marginBottom: 10,
     paddingHorizontal: 10
   },
   mealHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: 17,
     marginBottom: 5
   },
   mealTitle: {
     fontSize: 18,
-    fontWeight: 'bold'
+    fontWeight: 'bold',
+    color: '#665679'
   },
   dimText: {
-    color: 'grey'
+    color: '#C4C3D0'
   },
   kcalPrMeal: {
     fontSize: 14,
-    color: 'grey'
+    fontWeight: 'light',
+    color: '#C4C3D0'
+  },
+  dateContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10
+  },
+  dateContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#665679',
+    borderRadius: 10,
+    paddingVertical: 3,
+    paddingHorizontal: 10,
+    marginBottom: 15
+  },
+  dateButton: {
+    padding: 10
+  },
+  dateButtonText: {
+    fontSize: 20,
+    color: '#F0EFFF'
+  },
+  dateText: {
+    fontSize: 16,
+    color: '#F0EFFF'
+  },
+  addButton: {
+    width: 25,
+    height: 25,
+    borderRadius: 35 / 2,
+    backgroundColor: '#F0EFFF',
+    alignItems: 'center',
+    justifyContent: 'center'
   }
 });
 

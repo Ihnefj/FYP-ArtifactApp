@@ -14,65 +14,68 @@ const FoodItem = ({ food, onSelect, onDelete, onUpdate }) => {
   // View --------------------------------
   return (
     <Pressable onPress={() => onSelect(food)}>
-      <View style={styles.item}>
-        <View style={styles.row}>
-          <Text style={styles.text}>{food.FoodName}</Text>
-          <Text style={styles.kcalSpace}>
-            {Math.round(calculatedCalories)} kcal
-          </Text>
-        </View>
-
-        <View style={styles.row}>
-          <TextInput
-            style={styles.amountInput}
-            value={amount}
-            keyboardType='numeric'
-            onChangeText={(newAmount) => {
-              setAmount(newAmount);
-              onUpdate(newAmount);
-            }}
-          />
-
-          <Text style={styles.dimText}>{food.FoodUnit}</Text>
-
-          <Pressable onPress={() => onDelete(food)}>
-            <Icons.Delete />
-          </Pressable>
-        </View>
+      <View style={styles.container}>
+        <Text style={[styles.text, styles.expand]}>{food.FoodName}</Text>
+        <TextInput
+          style={styles.amountInput}
+          value={amount}
+          keyboardType='numeric'
+          onChangeText={(newAmount) => {
+            setAmount(newAmount);
+            onUpdate(newAmount);
+          }}
+        />
+        <Text style={styles.unitText}>{food.FoodUnit}</Text>
+        <Text style={[styles.text, styles.expand, styles.caloriesText]}>
+          {Math.round(calculatedCalories)}
+        </Text>
+        <Text style={styles.kcalText}>kcal</Text>
+        <Pressable onPress={() => onDelete(food)}>
+          <Icons.Delete />
+        </Pressable>
       </View>
     </Pressable>
   );
 };
 
 const styles = StyleSheet.create({
-  item: {
-    paddingVertical: 15,
-    borderTopWidth: 1,
-    borderColer: 'lightgray'
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#C4C3D0',
+    borderRadius: 5,
+    marginBottom: 5
   },
   text: {
     fontSize: 16,
-    flex: 1
+    color: '#665679'
   },
-  dimText: {
-    color: 'grey'
+  kcalText: {
+    fontSize: 16,
+    color: '#C4C3D0',
+    marginLeft: 5,
+    marginRight: 15
   },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between'
+  caloriesText: {
+    textAlign: 'right'
   },
-  kcalSpace: {
-    textAlign: 'right',
-    flex: 1,
-    color: 'grey'
+  unitText: {
+    fontSize: 16,
+    color: '#C4C3D0'
   },
   amountInput: {
     width: 50,
-    fontSize: 16,
-    borderBottomWidth: 1,
+    fontSize: 14,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#665679',
     textAlign: 'center',
-    marginRight: 5
+    marginHorizontal: 10,
+    color: '#665679'
+  },
+  expand: {
+    flex: 1
   }
 });
 
