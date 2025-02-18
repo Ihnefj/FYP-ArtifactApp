@@ -135,8 +135,7 @@ const FoodListScreen = ({ navigation }) => {
                 }
               };
 
-              mealsInstance.updateMeals(updatedMeals[formattedDate]); // Update Meals.js instance
-              return updatedMeals;
+              mealsInstance.updateMeals(updatedMeals[formattedDate]);
             });
           }
         }
