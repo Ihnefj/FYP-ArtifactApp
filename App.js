@@ -39,7 +39,7 @@ function App() {
             headerTintColor: '#665679'
           }}
           name='Home'
-          component={BottomTabNavigator}
+          component={FoodStack}
         />
         <Drawer.Screen
           options={{
@@ -174,7 +174,7 @@ function BottomTabNavigator() {
       />
       <Tab.Screen
         name='Food'
-        component={FoodOverviewScreen}
+        component={ProgressScreen}
         options={{ tabBarIcon: () => <Icons.Food />, headerShown: false }}
       />
       <Tab.Screen
