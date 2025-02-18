@@ -49,13 +49,14 @@ const styles = StyleSheet.create({
   foodItem: {
     padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    borderBottomColor: '#DDDCE5',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center'
   },
   foodText: {
     fontSize: 18,
+    color: '#665679',
     flex: 1
   },
   buttonContainer: {
@@ -65,7 +66,7 @@ const styles = StyleSheet.create({
   iconButton: {
     padding: 10,
     borderRadius: 5,
-    backgroundColor: '#eee'
+    backgroundColor: '#DDDCE5'
   }
 });
 

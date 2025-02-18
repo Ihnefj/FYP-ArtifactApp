@@ -10,12 +10,11 @@ const FoodOverviewScreen = () => {
   LogBox.ignoreLogs([
     'Non-serializable values were found in the navigation state'
   ]);
-
-  // State -----------------------------------
-
   const route = useRoute();
   const navigation = useNavigation();
   const { mealType } = route.params;
+  // State -----------------------------------
+
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredFoods, setFilteredFoods] = useState(initialFoods);
   const mealsInstance = Meals();
@@ -26,26 +25,32 @@ const FoodOverviewScreen = () => {
 
   const handleSearch = (query) => {
     setSearchQuery(query);
-    setFilteredFoods(
-      initialFoods.filter((food) =>
-        food.FoodName.toLowerCase().includes(query.toLowerCase())
-      )
-    );
+    if (!query) {
+      setFilteredFoods(initialFoods);
+    } else {
+      const lowercasedQuery = query.toLowerCase();
+      const filtered = initialFoods.filter((food) =>
+        food.FoodName.toLowerCase().includes(lowercasedQuery)
+      );
+      setFilteredFoods(filtered);
+    }
   };
 
   const handleSelectFood = (food) => {
-    meals[mealType] = [...meals[mealType], food];
-    mealsInstance.updateMeals(meals);
+    mealsInstance.addFood(food, mealType);
     route.params.onAddFood(food, mealType);
     navigation.goBack();
   };
 
   const handleModifyFood = (updatedFood, mealType) => {
-    meals[mealType] = meals[mealType].map((food) =>
-      food.FoodID === updatedFood.FoodID ? updatedFood : food
-    );
-    mealsInstance.updateMeals(meals);
-    setMeals({ ...meals });
+    const updatedMeals = {
+      ...meals,
+      [mealType]: meals[mealType].map((food) =>
+        food.FoodID === updatedFood.FoodID ? updatedFood : food
+      )
+    };
+
+    mealsInstance.updateMeals(updatedMeals);
   };
 
   const gotoModifyScreen = (food) => {
@@ -75,11 +80,12 @@ const FoodOverviewScreen = () => {
       <TextInput
         style={styles.searchBar}
         placeholder='Search foods...'
+        placeholderTextColor={'#C4C3D0'}
         value={searchQuery}
         onChangeText={handleSearch}
       />
       <FoodOverview
-        foods={foodList}
+        foods={filteredFoods}
         onSelect={handleSelectFood}
         onView={gotoFoodView}
         onEdit={gotoModifyScreen}
@@ -95,10 +101,11 @@ const styles = StyleSheet.create({
   },
   searchBar: {
     height: 40,
-    borderColor: 'gray',
+    borderColor: '#C4C3D0',
     borderWidth: 1,
     borderRadius: 5,
     paddingHorizontal: 10,
+    color: '#665679',
     marginBottom: 10
   }
 });

@@ -22,10 +22,17 @@ const Drawer = createDrawerNavigator();
 function App() {
   return (
     <NavigationContainer>
-      <Drawer.Navigator>
+      <Drawer.Navigator
+        screenOptions={{
+          drawerLabelStyle: { color: '#C4C3D0' },
+          drawerActiveTintColor: '#DCD6F7',
+          drawerActiveBackgroundColor: '#F4F2FF'
+        }}
+      >
         <Drawer.Screen
           options={{
-            drawerIcon: () => <Icons.Home />
+            drawerIcon: () => <Icons.Home />,
+            headerTintColor: '#665679'
           }}
           name='Home'
           component={FoodStack}
@@ -72,7 +79,7 @@ export const FoodStack = () => {
     <Stack.Navigator
       initialRouteName='FoodListScreen'
       screenOptions={{
-        headerStyle: { backgroundColor: 'black' },
+        headerStyle: { backgroundColor: '#665679' },
         headerTintColor: 'white'
       }}
     >
@@ -118,8 +125,8 @@ export const SettingsStack = () => {
     <Stack.Navigator
       initialRouteName='SettingsScreen'
       screenOptions={{
-        headerStyle: { backgroundColor: 'black' },
-        headerTintColor: 'white'
+        headerStyle: { backgroundColor: '#665679' },
+        headerTintColor: '#F0EFFF'
       }}
     >
       <Stack.Screen
