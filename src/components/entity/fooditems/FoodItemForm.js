@@ -4,7 +4,7 @@ import Form from '../../UI/Form.js';
 import { ScrollView } from 'react-native-gesture-handler';
 
 const defaultFood = {
-  FoodID: null,
+  FoodID: Math.floor(100000 + Math.random() * 900000),
   FoodAmount: null,
   FoodName: null,
   FoodUnit: null,
@@ -12,14 +12,14 @@ const defaultFood = {
   FoodProtein: null,
   FoodCarbs: null,
   FoodFat: null,
-  FoodImage: null
+  FoodImage:
+    'https://fruitgals.com.ph/storage/app/media/Screen%20Shot%202023-06-19%20at%209.11.17%20AM.png'
 };
 
 const FoodItemForm = ({ originalFood, onSubmit, onCancel }) => {
   // Initialisations ---------------------
-  (defaultFood.FoodID = Math.floor(100000 + Math.random() * 900000)),
-    (defaultFood.FoodImage =
-      'https://fruitgals.com.ph/storage/app/media/Screen%20Shot%202023-06-19%20at%209.11.17%20AM.png');
+  const submitLabel = originalFood ? 'Modify' : 'Add';
+  const submitIcon = originalFood ? <Icons.Edit /> : <Icons.Add />;
 
   // State -------------------------------
   const [food, setFood] = useState(originalFood || defaultFood);
@@ -29,8 +29,6 @@ const FoodItemForm = ({ originalFood, onSubmit, onCancel }) => {
   const handleSubmit = () => onSubmit(food);
 
   // View --------------------------------
-  const submitLabel = originalFood ? 'Modify' : 'Add';
-  const submitIcon = originalFood ? <Icons.Edit /> : <Icons.Add />;
   return (
     <ScrollView>
       <Form

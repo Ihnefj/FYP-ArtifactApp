@@ -10,12 +10,16 @@ import ProfileScreen from './src/components/screens/drawerscreens/settingsscreen
 import GoalsScreen from './src/components/screens/drawerscreens/settingsscreens/GoalsScreen';
 import ProgressScreen from './src/components/screens/ProgressScreen.js';
 import BarcodeScreen from './src/components/screens/BarcodeScreen.js';
+import FoodScreen from './src/components/screens/FoodScreen.js';
 import Icons from './src/components/UI/Icons';
 import 'react-native-gesture-handler';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { registerRootComponent } from 'expo';
-import FoodOverview from './src/components/entity/fooditems/FoodOverview.js';
+import { GoalsProvider } from './src/contexts/GoalsContext';
+import HelpScreen from './src/components/screens/drawerscreens/helpscreens/HelpScreen.js';
+import FAQScreen from './src/components/screens/drawerscreens/helpscreens/FAQScreen.js';
+import WalkthroughScreen from './src/components/screens/drawerscreens/helpscreens/WalkthroughScreen.js';
 
 registerRootComponent(App);
 
@@ -25,52 +29,58 @@ const Tab = createBottomTabNavigator();
 
 function App() {
   return (
-    <NavigationContainer>
-      <Drawer.Navigator
-        screenOptions={{
-          drawerLabelStyle: { color: '#C4C3D0' },
-          drawerActiveTintColor: '#DCD6F7',
-          drawerActiveBackgroundColor: '#F4F2FF'
-        }}
-      >
-        <Drawer.Screen
-          options={{
-            drawerIcon: () => <Icons.Home />,
-            headerTintColor: '#665679'
+    <GoalsProvider>
+      <NavigationContainer>
+        <Drawer.Navigator
+          screenOptions={{
+            drawerLabelStyle: { color: '#C4C3D0' },
+            drawerActiveTintColor: '#DCD6F7',
+            drawerActiveBackgroundColor: '#F4F2FF'
           }}
-          name='Home'
-          component={FoodStack}
-        />
-        <Drawer.Screen
-          options={{
-            drawerIcon: () => <Icons.Settings />
-          }}
-          name='Settings'
-          component={SettingsStack}
-        />
-        <Drawer.Screen
-          options={{
-            drawerIcon: () => <Icons.Signin />
-          }}
-          name='Sign in'
-          component={SettingsStack}
-        />
-        <Drawer.Screen
-          options={{
-            drawerIcon: () => <Icons.Book />
-          }}
-          name='Learn nutrition'
-          component={SettingsStack}
-        />
-        <Drawer.Screen
-          options={{
-            drawerIcon: () => <Icons.Help />
-          }}
-          name='Help'
-          component={SettingsStack}
-        />
-      </Drawer.Navigator>
-    </NavigationContainer>
+        >
+          <Drawer.Screen
+            options={{
+              drawerIcon: () => <Icons.Home />,
+              headerTintColor: '#665679'
+            }}
+            name='Home'
+            component={BottomTabNavigator}
+          />
+          <Drawer.Screen
+            options={{
+              drawerIcon: () => <Icons.Settings />,
+              headerTintColor: '#665679'
+            }}
+            name='Settings'
+            component={SettingsStack}
+          />
+          <Drawer.Screen
+            options={{
+              drawerIcon: () => <Icons.Signin />,
+              headerTintColor: '#665679'
+            }}
+            name='Sign in'
+            component={SettingsStack}
+          />
+          <Drawer.Screen
+            options={{
+              drawerIcon: () => <Icons.Book />,
+              headerTintColor: '#665679'
+            }}
+            name='Learn nutrition'
+            component={SettingsStack}
+          />
+          <Drawer.Screen
+            options={{
+              drawerIcon: () => <Icons.Help />,
+              headerTintColor: '#665679'
+            }}
+            name='Help'
+            component={HelpStack}
+          />
+        </Drawer.Navigator>
+      </NavigationContainer>
+    </GoalsProvider>
   );
 }
 
@@ -130,7 +140,7 @@ export const SettingsStack = () => {
       initialRouteName='SettingsScreen'
       screenOptions={{
         headerStyle: { backgroundColor: '#665679' },
-        headerTintColor: '#F0EFFF'
+        headerTintColor: 'white'
       }}
     >
       <Stack.Screen
@@ -154,7 +164,45 @@ export const SettingsStack = () => {
   );
 };
 
+export const HelpStack = () => {
+  // Initialisations -------------------------
+  // State -----------------------------------
+  // Handlers --------------------------------
+  // View ------------------------------------
+  return (
+    <Stack.Navigator
+      initialRouteName='HelpScreen'
+      screenOptions={{
+        headerStyle: { backgroundColor: '#665679' },
+        headerTintColor: 'white'
+      }}
+    >
+      <Stack.Screen
+        name='HelpScreen'
+        component={HelpScreen}
+        options={{ headerShown: false }}
+      />
+
+      <Stack.Screen
+        name='FAQScreen'
+        component={FAQScreen}
+        options={{ title: 'FAQ' }}
+      />
+
+      <Stack.Screen
+        name='WalkthroughScreen'
+        component={WalkthroughScreen}
+        options={{ title: 'Walkthrough' }}
+      />
+    </Stack.Navigator>
+  );
+};
+
 function BottomTabNavigator() {
+  // Initialisations -------------------------
+  // State -----------------------------------
+  // Handlers --------------------------------
+  // View ------------------------------------
   return (
     <Tab.Navigator
       screenOptions={{
@@ -168,13 +216,17 @@ function BottomTabNavigator() {
       }}
     >
       <Tab.Screen
-        name='Home'
-        component={FoodListScreen}
-        options={{ tabBarIcon: () => <Icons.Home />, headerShown: false }}
+        name='HomeTab'
+        component={FoodStack}
+        options={{
+          tabBarIcon: () => <Icons.Home />,
+          headerShown: false,
+          title: 'Home'
+        }}
       />
       <Tab.Screen
         name='Food'
-        component={ProgressScreen}
+        component={FoodScreen}
         options={{ tabBarIcon: () => <Icons.Food />, headerShown: false }}
       />
       <Tab.Screen

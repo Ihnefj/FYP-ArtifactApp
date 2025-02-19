@@ -1,7 +1,6 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Icons from '../../UI/Icons';
 import { Button, ButtonTray } from '../../UI/Button';
-import SettingsScreen from '../../screens/drawerscreens/settingsscreens/SettingsScreen';
 
 const SettingsView = ({ navigation }) => {
   // Initialisations ---------------------
@@ -39,22 +38,6 @@ const SettingsView = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     gap: 15
-  },
-  image: {
-    borderRadius: 3
-  },
-  infoTray: {
-    gap: 5
-  },
-  text: {
-    fontSize: 16
-  },
-  boldText: {
-    fontSize: 16,
-    fontWeight: 'bold'
-  },
-  dimText: {
-    color: 'grey'
   }
 });
 

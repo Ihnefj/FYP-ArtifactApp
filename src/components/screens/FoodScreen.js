@@ -1,16 +1,16 @@
-import Screen from '../../layout/Screen';
+import Screen from '../layout/Screen';
 import { Text } from 'react-native';
 
-const RestrictionScreen = () => {
+const FoodScreen = () => {
   // Initialisations -------------------------
   // State -----------------------------------
   // Handlers --------------------------------
   // View ------------------------------------
   return (
     <Screen>
-      <Text>RestrictionScreen</Text>
+      <Text>FoodScreen</Text>
     </Screen>
   );
 };
 
-export default RestrictionScreen;
+export default FoodScreen;

@@ -30,7 +30,7 @@ const styles = StyleSheet.create({
     minHeight: 50,
     borderWidth: 1,
     borderRadius: 7,
-    borderColor: 'grey',
+    borderColor: '#C4C3D0',
     backgroundColor: 'white',
     alignItems: 'center',
     justifyContent: 'center',
@@ -40,7 +40,8 @@ const styles = StyleSheet.create({
     gap: 5
   },
   label: {
-    fontSize: 16
+    fontSize: 16,
+    color: '#665679'
   }
 });
 

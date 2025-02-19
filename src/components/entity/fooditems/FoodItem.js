@@ -1,21 +1,29 @@
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Icons from '../../UI/Icons';
 
 const FoodItem = ({ food, onSelect, onDelete, onUpdate }) => {
   // Initialisations ---------------------
-  // State -------------------------------
-  const [amount, setAmount] = useState(food.FoodAmount.toString());
-  // Handlers ----------------------------
   const baseCalories = food.BaseCalories || food.FoodCalories;
   const baseAmount = food.BaseAmount || 100;
+
+  // State -------------------------------
+  const [amount, setAmount] = useState(food.FoodAmount.toString());
+  const [displayFood, setDisplayFood] = useState(food);
+
+  useEffect(() => {
+    setDisplayFood(food);
+    setAmount(food.FoodAmount.toString());
+  }, [food]);
+
+  // Handlers ----------------------------
   const calculatedCalories = (parseFloat(amount) / baseAmount) * baseCalories;
 
   // View --------------------------------
   return (
-    <Pressable onPress={() => onSelect(food)}>
+    <Pressable onPress={() => onSelect(displayFood)}>
       <View style={styles.container}>
-        <Text style={[styles.text, styles.expand]}>{food.FoodName}</Text>
+        <Text style={[styles.text, styles.expand]}>{displayFood.FoodName}</Text>
         <TextInput
           style={styles.amountInput}
           value={amount}
@@ -25,12 +33,12 @@ const FoodItem = ({ food, onSelect, onDelete, onUpdate }) => {
             onUpdate(newAmount);
           }}
         />
-        <Text style={styles.unitText}>{food.FoodUnit}</Text>
+        <Text style={styles.unitText}>{displayFood.FoodUnit}</Text>
         <Text style={[styles.text, styles.expand, styles.caloriesText]}>
           {Math.round(calculatedCalories)}
         </Text>
         <Text style={styles.kcalText}>kcal</Text>
-        <Pressable onPress={() => onDelete(food)}>
+        <Pressable onPress={() => onDelete(displayFood)}>
           <Icons.Delete />
         </Pressable>
       </View>

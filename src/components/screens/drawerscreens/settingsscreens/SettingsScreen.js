@@ -6,7 +6,6 @@ const SettingsScreen = ({ navigation }) => {
   // Initialisations ---------------------
   // State -------------------------------
   // Handlers ----------------------------
-
   // View --------------------------------
   return (
     <Screen>

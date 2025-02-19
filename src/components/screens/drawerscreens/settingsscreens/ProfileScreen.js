@@ -1,18 +1,16 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Screen from '../../../layout/Screen';
+import { Text } from 'react-native';
 
-const Component = () => {
-  // Initialisations ---------------------
-  // State -------------------------------
-  // Handlers ----------------------------
-  // View --------------------------------
+const ProfileScreen = () => {
+  // Initialisations -------------------------
+  // State -----------------------------------
+  // Handlers --------------------------------
+  // View ------------------------------------
   return (
     <Screen>
-      <Text>Profile</Text>
+      <Text>ProfileScreen</Text>
     </Screen>
   );
 };
 
-const styles = StyleSheet.create({});
-
-export default Component;
+export default ProfileScreen;

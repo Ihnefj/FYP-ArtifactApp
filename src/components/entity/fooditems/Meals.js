@@ -1,24 +1,18 @@
 import { useState } from 'react';
 
-let mealsState = {
-  Breakfast: [],
-  Lunch: [],
-  Dinner: [],
-  Snacks: []
-};
-
 const Meals = () => {
   // Initialisations ---------------------
-  const [mealsByDate, setMealsByDate] = useState({});
-  const [meals, setMeals] = useState({
+  const defaultMeals = {
     Breakfast: [],
     Lunch: [],
     Dinner: [],
     Snacks: []
-  });
+  };
+
+  // State -------------------------------
+  const [mealsByDate, setMealsByDate] = useState({});
 
   // Handlers ----------------------------
-
   const getMeals = (date) => {
     return (
       mealsByDate[date] || { Breakfast: [], Lunch: [], Dinner: [], Snacks: [] }
@@ -49,53 +43,59 @@ const Meals = () => {
     });
   };
 
-  const clearMeals = () => {
-    setMeals({
-      Breakfast: [],
-      Lunch: [],
-      Dinner: [],
-      Snacks: []
-    });
-  };
-
   const handleModifyFood = (updatedFood) => {
-    console.log('Modifying food:', updatedFood);
-    setMeals((prevMeals) => {
-      const newMeals = JSON.parse(JSON.stringify(prevMeals));
-
-      Object.keys(newMeals).forEach((mealType) => {
-        newMeals[mealType] = newMeals[mealType].map((food) =>
-          food.uniqueID === updatedFood.uniqueID ? updatedFood : food
-        );
+    setMealsByDate((prevMealsByDate) => {
+      const newMealsByDate = { ...prevMealsByDate };
+      Object.keys(newMealsByDate).forEach((date) => {
+        const meals = newMealsByDate[date];
+        if (meals) {
+          Object.keys(meals).forEach((mealType) => {
+            if (meals[mealType]) {
+              meals[mealType] = meals[mealType].map((food) => {
+                if (food.FoodID === updatedFood.FoodID) {
+                  const newFoodCalories =
+                    (food.FoodAmount / updatedFood.FoodAmount) *
+                    updatedFood.FoodCalories;
+                  return {
+                    ...updatedFood,
+                    uniqueID: food.uniqueID,
+                    FoodAmount: food.FoodAmount,
+                    FoodCalories: newFoodCalories,
+                    BaseCalories: updatedFood.FoodCalories,
+                    BaseAmount: updatedFood.FoodAmount
+                  };
+                }
+                return food;
+              });
+            }
+          });
+        }
       });
-
-      console.log('After modification:', newMeals);
-      return newMeals;
+      return newMealsByDate;
     });
   };
 
   const handleDeleteFood = (foodToDelete, mealType) => {
-    console.log(`Deleting ${foodToDelete.FoodName} from ${mealType}...`);
-    setMeals((prevMeals) => {
-      const newMeals = JSON.parse(JSON.stringify(prevMeals));
-      newMeals[mealType] = newMeals[mealType].filter(
-        (food) => food.uniqueID !== foodToDelete.uniqueID
-      );
-
-      console.log('After deletion:', newMeals);
-      return newMeals;
+    setMealsByDate((prevMealsByDate) => {
+      const newMealsByDate = { ...prevMealsByDate };
+      Object.keys(newMealsByDate).forEach((date) => {
+        if (newMealsByDate[date] && newMealsByDate[date][mealType]) {
+          newMealsByDate[date][mealType] = newMealsByDate[date][
+            mealType
+          ].filter((food) => food.uniqueID !== foodToDelete.uniqueID);
+        }
+      });
+      return newMealsByDate;
     });
   };
 
   // View --------------------------------
-
   return {
     getMeals,
-    clearMeals,
     updateMeals,
+    addFood,
     handleModifyFood,
-    handleDeleteFood,
-    addFood
+    handleDeleteFood
   };
 };
 
