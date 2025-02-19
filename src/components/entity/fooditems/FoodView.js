@@ -15,6 +15,7 @@ const FoodView = ({ food, onDelete, onModify }) => {
       `Are you sure you sure that you want to delete food ${food.FoodName}`,
       [{ text: 'Cancel' }, { text: 'Delete', onPress: handleDelete }]
     );
+
   // View --------------------------------
   return (
     <View style={styles.container}>

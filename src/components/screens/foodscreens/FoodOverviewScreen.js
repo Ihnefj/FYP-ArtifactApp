@@ -4,6 +4,7 @@ import { LogBox, Text, View, TextInput, StyleSheet } from 'react-native';
 import FoodOverview from '../../entity/fooditems/FoodOverview.js';
 import initialFoods from '../../../data/foods.js';
 import Meals from '../../entity/fooditems/Meals.js';
+import Screen from '../../layout/Screen.js';
 
 const FoodOverviewScreen = () => {
   // Initialisations -------------------------
@@ -13,17 +14,15 @@ const FoodOverviewScreen = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const { mealType } = route.params;
+  const mealsInstance = Meals();
 
   // State -----------------------------------
-
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredFoods, setFilteredFoods] = useState(initialFoods);
-  const mealsInstance = Meals();
-  const meals = mealsInstance.getMeals();
   const [foodList, setFoodList] = useState(filteredFoods);
+  const meals = mealsInstance.getMeals();
 
   // Handlers --------------------------------
-
   const handleSearch = (query) => {
     setSearchQuery(query);
     if (!query) {
@@ -43,45 +42,60 @@ const FoodOverviewScreen = () => {
     navigation.goBack();
   };
 
-  const handleModifyFood = (updatedFood, mealType) => {
-    const updatedMeals = {
-      ...meals,
-      [mealType]: meals[mealType].map((food) =>
+  const handleModifyFood = (updatedFood) => {
+    setFilteredFoods((prevFoods) =>
+      prevFoods.map((food) =>
         food.FoodID === updatedFood.FoodID ? updatedFood : food
       )
-    };
+    );
 
-    mealsInstance.updateMeals(updatedMeals);
+    const foodIndex = initialFoods.findIndex(
+      (food) => food.FoodID === updatedFood.FoodID
+    );
+    if (foodIndex !== -1) {
+      initialFoods[foodIndex] = updatedFood;
+    }
+
+    if (route.params.onModifyFood) {
+      route.params.onModifyFood(updatedFood);
+    }
   };
 
-  const gotoModifyScreen = (food) => {
+  const updateFoodInList = (updatedFood) => {
+    setFilteredFoods((prevFoods) =>
+      prevFoods.map((food) =>
+        food.FoodID === updatedFood.FoodID ? updatedFood : food
+      )
+    );
+    const foodIndex = initialFoods.findIndex(
+      (food) => food.FoodID === updatedFood.FoodID
+    );
+    if (foodIndex !== -1) {
+      initialFoods[foodIndex] = updatedFood;
+    }
+  };
+
+  const gotoModifyScreen = (food) =>
     navigation.navigate('FoodModifyScreen', {
       food,
-      onModify: (updatedFood) => {
-        setFoodList((prevFoodList) =>
-          prevFoodList.map((f) =>
-            f.FoodID === updatedFood.FoodID ? updatedFood : f
-          )
-        );
-      }
+      onModify: handleModifyFood
     });
-  };
 
-  const gotoFoodView = (food, mealType) => {
+  const gotoFoodView = (food) => {
     navigation.navigate('FoodViewScreen', {
       food,
       mealType,
+      onDelete: mealsInstance.handleDeleteFood,
       onModify: handleModifyFood
     });
   };
 
   // View ------------------------------------
   return (
-    <View style={styles.container}>
+    <Screen>
       <TextInput
-        style={styles.searchBar}
+        style={styles.searchInput}
         placeholder='Search foods...'
-        placeholderTextColor={'#C4C3D0'}
         value={searchQuery}
         onChangeText={handleSearch}
       />
@@ -91,22 +105,17 @@ const FoodOverviewScreen = () => {
         onView={gotoFoodView}
         onEdit={gotoModifyScreen}
       />
-    </View>
+    </Screen>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 10
-  },
-  searchBar: {
+  searchInput: {
     height: 40,
-    borderColor: '#C4C3D0',
     borderWidth: 1,
-    borderRadius: 5,
+    borderColor: '#ddd',
+    borderRadius: 8,
     paddingHorizontal: 10,
-    color: '#665679',
     marginBottom: 10
   }
 });

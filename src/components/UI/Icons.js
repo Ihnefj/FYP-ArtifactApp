@@ -36,7 +36,6 @@ const Scanner = () => (
   <Ionicons name='barcode-sharp' size={16} color='#665679' />
 );
 
-// Compose
 Icons.Add = Add;
 Icons.Close = Close;
 Icons.Delete = Delete;
