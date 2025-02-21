@@ -1,16 +1,16 @@
 import Screen from '../../layout/Screen';
-import { Text } from 'react-native';
+import ProgressView from '../../entity/tabitems/ProgressView';
 
-const RegisterScreen = () => {
+const ProgressScreen = () => {
   // Initialisations -------------------------
   // State -----------------------------------
   // Handlers --------------------------------
   // View ------------------------------------
   return (
     <Screen>
-      <Text>RegisterScreen</Text>
+      <ProgressView />
     </Screen>
   );
 };
 
-export default RegisterScreen;
+export default ProgressScreen;

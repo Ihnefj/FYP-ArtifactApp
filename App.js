@@ -8,9 +8,9 @@ import FoodOverviewScreen from './src/components/screens/foodscreens/FoodOvervie
 import SettingsScreen from './src/components/screens/drawerscreens/settingsscreens/SettingsScreen';
 import ProfileScreen from './src/components/screens/drawerscreens/settingsscreens/ProfileScreen';
 import GoalsScreen from './src/components/screens/drawerscreens/settingsscreens/GoalsScreen';
-import ProgressScreen from './src/components/screens/ProgressScreen.js';
-import BarcodeScreen from './src/components/screens/BarcodeScreen.js';
-import FoodScreen from './src/components/screens/FoodScreen.js';
+import ProgressScreen from './src/components/screens/tabscreens/ProgressScreen.js';
+import BarcodeScreen from './src/components/screens/tabscreens/BarcodeScreen.js';
+import FoodScreen from './src/components/screens/tabscreens/FoodScreen.js';
 import Icons from './src/components/UI/Icons';
 import 'react-native-gesture-handler';
 import { createDrawerNavigator } from '@react-navigation/drawer';
@@ -20,6 +20,14 @@ import { GoalsProvider } from './src/contexts/GoalsContext';
 import HelpScreen from './src/components/screens/drawerscreens/helpscreens/HelpScreen.js';
 import FAQScreen from './src/components/screens/drawerscreens/helpscreens/FAQScreen.js';
 import WalkthroughScreen from './src/components/screens/drawerscreens/helpscreens/WalkthroughScreen.js';
+import LearnScreen from './src/components/screens/drawerscreens/learnscreens/LearnScreen.js';
+import SignInScreen from './src/components/screens/drawerscreens/signscreens/SignInScreen.js';
+import RegisterScreen from './src/components/screens/drawerscreens/signscreens/RegisterScreen.js';
+import ForgotScreen from './src/components/screens/drawerscreens/signscreens/ForgotScreen.js';
+import { TouchableOpacity, View } from 'react-native';
+import { useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import { MealsProvider } from './src/contexts/MealsContext';
 
 registerRootComponent(App);
 
@@ -27,60 +35,103 @@ const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
 const Tab = createBottomTabNavigator();
 
+const DrawerButton = ({ navigation }) => {
+  useFocusEffect(
+    useCallback(() => {
+      return () => {};
+    }, [])
+  );
+
+  return (
+    <TouchableOpacity
+      style={{
+        padding: 15,
+        marginLeft: 5,
+        flexDirection: 'column',
+        gap: 4
+      }}
+      activeOpacity={0.7}
+      onPress={() => navigation.openDrawer()}
+    >
+      <View style={{ width: 20, height: 2, backgroundColor: '#665679' }} />
+      <View style={{ width: 20, height: 2, backgroundColor: '#665679' }} />
+      <View style={{ width: 20, height: 2, backgroundColor: '#665679' }} />
+    </TouchableOpacity>
+  );
+};
+
 function App() {
   return (
-    <GoalsProvider>
-      <NavigationContainer>
-        <Drawer.Navigator
-          screenOptions={{
-            drawerLabelStyle: { color: '#C4C3D0' },
-            drawerActiveTintColor: '#DCD6F7',
-            drawerActiveBackgroundColor: '#F4F2FF'
-          }}
-        >
-          <Drawer.Screen
-            options={{
-              drawerIcon: () => <Icons.Home />,
-              headerTintColor: '#665679'
-            }}
-            name='Home'
-            component={BottomTabNavigator}
-          />
-          <Drawer.Screen
-            options={{
-              drawerIcon: () => <Icons.Settings />,
-              headerTintColor: '#665679'
-            }}
-            name='Settings'
-            component={SettingsStack}
-          />
-          <Drawer.Screen
-            options={{
-              drawerIcon: () => <Icons.Signin />,
-              headerTintColor: '#665679'
-            }}
-            name='Sign in'
-            component={SettingsStack}
-          />
-          <Drawer.Screen
-            options={{
-              drawerIcon: () => <Icons.Book />,
-              headerTintColor: '#665679'
-            }}
-            name='Learn nutrition'
-            component={SettingsStack}
-          />
-          <Drawer.Screen
-            options={{
-              drawerIcon: () => <Icons.Help />,
-              headerTintColor: '#665679'
-            }}
-            name='Help'
-            component={HelpStack}
-          />
-        </Drawer.Navigator>
-      </NavigationContainer>
-    </GoalsProvider>
+    <NavigationContainer>
+      <MealsProvider>
+        <GoalsProvider>
+          <Drawer.Navigator
+            screenOptions={({ navigation }) => ({
+              drawerLabelStyle: { color: '#C4C3D0' },
+              drawerActiveTintColor: '#DCD6F7',
+              drawerActiveBackgroundColor: '#F4F2FF',
+              drawerType: 'front',
+              swipeEnabled: true,
+              swipeEdgeWidth: 100,
+              swipeMinDistance: 3,
+              overlayColor: 'rgba(0,0,0,0.5)',
+              drawerStyle: {
+                width: '70%'
+              },
+              gestureHandlerProps: {
+                hitSlop: { right: 15, left: 15 },
+                activeOffsetX: [-5, 5],
+                failOffsetY: [-20, 20],
+                minDist: 5,
+                minVelocity: 0.3
+              },
+              headerLeft: () => <DrawerButton navigation={navigation} />
+            })}
+          >
+            <Drawer.Screen
+              options={{
+                drawerIcon: () => <Icons.Home />,
+                headerTintColor: '#665679'
+              }}
+              name='Home'
+              component={BottomTabNavigator}
+            />
+            <Drawer.Screen
+              options={{
+                drawerIcon: () => <Icons.Settings />,
+                headerTintColor: '#665679'
+              }}
+              name='Settings'
+              component={SettingsStack}
+            />
+            <Drawer.Screen
+              options={{
+                drawerIcon: () => <Icons.Signin />,
+                headerTintColor: '#665679'
+              }}
+              name='Sign in'
+              component={SignStack}
+            />
+            <Drawer.Screen
+              options={{
+                drawerIcon: () => <Icons.Book />,
+                headerTintColor: '#665679'
+              }}
+              name='Learn nutrition'
+              component={LearnStack}
+            />
+            <Drawer.Screen
+              options={{
+                drawerIcon: () => <Icons.Help />,
+                headerTintColor: '#665679'
+              }}
+              name='Help'
+              component={HelpStack}
+            />
+          </Drawer.Navigator>
+        </GoalsProvider>
+      </MealsProvider>
+    </NavigationContainer>
   );
 }
 
@@ -194,6 +245,58 @@ export const HelpStack = () => {
         component={WalkthroughScreen}
         options={{ title: 'Walkthrough' }}
       />
+    </Stack.Navigator>
+  );
+};
+
+export const LearnStack = () => {
+  // Initialisations -------------------------
+  // State -----------------------------------
+  // Handlers --------------------------------
+  // View ------------------------------------
+  return (
+    <Stack.Navigator
+      initialRouteName='LearnScreen'
+      screenOptions={{
+        headerStyle: { backgroundColor: '#665679' },
+        headerTintColor: 'white'
+      }}
+    >
+      <Stack.Screen
+        name='LearnScreen'
+        component={LearnScreen}
+        options={{ headerShown: false }}
+      />
+    </Stack.Navigator>
+  );
+};
+
+export const SignStack = () => {
+  // Initialisations -------------------------
+  // State -----------------------------------
+  // Handlers --------------------------------
+  // View ------------------------------------
+  return (
+    <Stack.Navigator
+      initialRouteName='SignInScreen'
+      screenOptions={{
+        headerStyle: { backgroundColor: '#665679' },
+        headerTintColor: 'white'
+      }}
+    >
+      <Stack.Screen
+        name='SignInScreen'
+        component={SignInScreen}
+        options={{ headerShown: false }}
+      />
+
+      <Stack.Screen
+        name='RegisterScreen'
+        component={RegisterScreen}
+        options={{ headerShown: false }}
+      />
+
+      <Stack.Screen name='ForgotScreen' component={ForgotScreen} />
     </Stack.Navigator>
   );
 };

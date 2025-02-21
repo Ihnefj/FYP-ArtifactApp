@@ -19,8 +19,6 @@ const FoodOverviewScreen = () => {
   // State -----------------------------------
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredFoods, setFilteredFoods] = useState(initialFoods);
-  const [foodList, setFoodList] = useState(filteredFoods);
-  const meals = mealsInstance.getMeals();
 
   // Handlers --------------------------------
   const handleSearch = (query) => {

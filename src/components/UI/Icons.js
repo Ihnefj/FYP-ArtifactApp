@@ -4,7 +4,8 @@ import {
   FontAwesome6,
   AntDesign,
   Ionicons,
-  MaterialCommunityIcons
+  MaterialCommunityIcons,
+  Fontisto
 } from '@expo/vector-icons';
 
 const Icons = {};
@@ -35,6 +36,14 @@ const Progress = () => (
 const Scanner = () => (
   <Ionicons name='barcode-sharp' size={16} color='#665679' />
 );
+const Question = () => (
+  <MaterialCommunityIcons
+    name='message-question-outline'
+    size={16}
+    color='#665679'
+  />
+);
+const Map = () => <Fontisto name='map' size={16} color='#665679' />;
 
 Icons.Add = Add;
 Icons.Close = Close;
@@ -54,5 +63,7 @@ Icons.Eye = Eye;
 Icons.Food = Food;
 Icons.Progress = Progress;
 Icons.Scanner = Scanner;
+Icons.Question = Question;
+Icons.Map = Map;
 
 export default Icons;
