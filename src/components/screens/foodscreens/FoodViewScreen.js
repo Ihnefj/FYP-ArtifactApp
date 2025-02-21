@@ -3,6 +3,7 @@ import FoodView from '../../entity/fooditems/FoodView';
 import Meals from '../../entity/fooditems/Meals';
 import { useEffect, useState } from 'react';
 import initialFoods from '../../../data/foods.js';
+import { ScrollView } from 'react-native';
 
 const FoodViewScreen = ({ navigation, route }) => {
   // Initialisations -------------------------
@@ -51,21 +52,23 @@ const FoodViewScreen = ({ navigation, route }) => {
     navigation.navigate('FoodModifyScreen', {
       food: updatedFood,
       onModify: (newFood) => {
-        setUpdatedFood(newFood);
         if (onModify) {
           onModify(newFood);
         }
+        navigation.goBack();
       }
     });
 
   // View ------------------------------------
   return (
     <Screen>
-      <FoodView
-        food={updatedFood}
-        onDelete={handleDelete}
-        onModify={gotoModifyScreen}
-      />
+      <ScrollView>
+        <FoodView
+          food={updatedFood}
+          onDelete={handleDelete}
+          onModify={gotoModifyScreen}
+        />
+      </ScrollView>
     </Screen>
   );
 };

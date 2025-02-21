@@ -1,16 +1,16 @@
-import Screen from '../layout/Screen';
+import Screen from '../../../layout/Screen';
 import { Text } from 'react-native';
 
-const ProgressScreen = () => {
+const LearnScreen = () => {
   // Initialisations -------------------------
   // State -----------------------------------
   // Handlers --------------------------------
   // View ------------------------------------
   return (
     <Screen>
-      <Text>ProgressScreen</Text>
+      <Text>LearnScreen</Text>
     </Screen>
   );
 };
 
-export default ProgressScreen;
+export default LearnScreen;

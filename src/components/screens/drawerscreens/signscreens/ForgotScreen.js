@@ -1,16 +1,16 @@
-import Screen from '../../layout/Screen';
+import Screen from '../../../layout/Screen';
 import { Text } from 'react-native';
 
-const SignInScreen = () => {
+const ForgotScreen = () => {
   // Initialisations -------------------------
   // State -----------------------------------
   // Handlers --------------------------------
   // View ------------------------------------
   return (
     <Screen>
-      <Text>SignInScreen</Text>
+      <Text>ForgotScreen</Text>
     </Screen>
   );
 };
 
-export default SignInScreen;
+export default ForgotScreen;

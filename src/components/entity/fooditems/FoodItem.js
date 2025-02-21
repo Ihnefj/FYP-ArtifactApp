@@ -10,14 +10,18 @@ const FoodItem = ({ food, onSelect, onDelete, onUpdate }) => {
   // State -------------------------------
   const [amount, setAmount] = useState(food.FoodAmount.toString());
   const [displayFood, setDisplayFood] = useState(food);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
-    setDisplayFood(food);
-    setAmount(food.FoodAmount.toString());
-  }, [food]);
+    if (!isEditing) {
+      setDisplayFood(food);
+      setAmount(food.FoodAmount.toString());
+    }
+  }, [food, isEditing]);
 
   // Handlers ----------------------------
-  const calculatedCalories = (parseFloat(amount) / baseAmount) * baseCalories;
+  const calculatedCalories =
+    ((parseFloat(amount) || 0) / baseAmount) * baseCalories;
 
   // View --------------------------------
   return (
@@ -28,6 +32,14 @@ const FoodItem = ({ food, onSelect, onDelete, onUpdate }) => {
           style={styles.amountInput}
           value={amount}
           keyboardType='numeric'
+          onFocus={() => setIsEditing(true)}
+          onBlur={() => {
+            setIsEditing(false);
+            if (amount === '') {
+              setAmount('0');
+              onUpdate('0');
+            }
+          }}
           onChangeText={(newAmount) => {
             setAmount(newAmount);
             onUpdate(newAmount);
