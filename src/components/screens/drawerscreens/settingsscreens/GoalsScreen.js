@@ -3,8 +3,10 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity
+  TouchableOpacity,
+  Keyboard
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import Screen from '../../../layout/Screen';
 import { useState } from 'react';
 import { useGoals } from '../../../../contexts/GoalsContext';
@@ -17,6 +19,8 @@ const GoalsScreen = () => {
     dailyProteinGoal,
     dailyCarbsGoal,
     dailyFatGoal,
+    dailyFibreGoal,
+    weightGoal,
     setGoals
   } = useGoals();
   const navigation = useNavigation();
@@ -39,6 +43,12 @@ const GoalsScreen = () => {
     dailyCarbsGoal?.toString() || '250'
   );
   const [fatInput, setFatInput] = useState(dailyFatGoal?.toString() || '70');
+  const [fibreInput, setFibreInput] = useState(
+    dailyFibreGoal?.toString() || '25'
+  );
+  const [weightInput, setWeightInput] = useState(
+    weightGoal?.toString() || '70'
+  );
 
   // Handlers ----------------------------
   const handleSave = () => {
@@ -52,7 +62,9 @@ const GoalsScreen = () => {
       },
       protein: parseInt(proteinInput),
       carbs: parseInt(carbsInput),
-      fat: parseInt(fatInput)
+      fat: parseInt(fatInput),
+      fibre: parseInt(fibreInput),
+      weight: parseFloat(weightInput)
     };
 
     if (
@@ -81,13 +93,23 @@ const GoalsScreen = () => {
       setProteinInput(dailyProteinGoal?.toString() || '100');
       setCarbsInput(dailyCarbsGoal?.toString() || '250');
       setFatInput(dailyFatGoal?.toString() || '70');
+      setFibreInput(dailyFibreGoal?.toString() || '25');
+      setWeightInput(weightGoal?.toString() || '70');
     }
   };
 
   // View ------------------------------------
   return (
     <Screen>
-      <View style={styles.container}>
+      <KeyboardAwareScrollView
+        style={styles.container}
+        bounces={false}
+        enableOnAndroid={true}
+        enableAutomaticScroll={true}
+        keyboardShouldPersistTaps='handled'
+        extraScrollHeight={20}
+        contentContainerStyle={{ paddingBottom: 40 }}
+      >
         <View style={styles.calorieContainer}>
           <Text style={styles.label}>Daily Calorie Goal Range</Text>
           <View style={styles.rangeInputs}>
@@ -142,24 +164,55 @@ const GoalsScreen = () => {
           />
         </View>
 
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Daily Fibre Goal (g)</Text>
+          <TextInput
+            placeholder='Enter fibre goal'
+            value={fibreInput}
+            onChangeText={setFibreInput}
+            keyboardType='numeric'
+            style={styles.input}
+          />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Weight Goal (kg)</Text>
+          <TextInput
+            placeholder='Enter weight goal'
+            value={weightInput}
+            onChangeText={setWeightInput}
+            keyboardType='numeric'
+            style={styles.input}
+          />
+        </View>
+
+        <TouchableOpacity
+          style={styles.saveButton}
+          onPress={() => {
+            Keyboard.dismiss();
+            handleSave();
+          }}
+        >
           <Text style={styles.saveButtonText}>Save Goals</Text>
         </TouchableOpacity>
-      </View>
+      </KeyboardAwareScrollView>
     </Screen>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
-    gap: 15
+    flex: 1
   },
   calorieContainer: {
-    gap: 5
+    gap: 5,
+    paddingHorizontal: 20,
+    paddingTop: 20
   },
   inputContainer: {
-    gap: 5
+    gap: 5,
+    paddingHorizontal: 20,
+    marginTop: 15
   },
   label: {
     fontSize: 16,
@@ -189,7 +242,8 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 10,
     alignItems: 'center',
-    marginTop: 10
+    marginTop: 20,
+    marginHorizontal: 20
   },
   saveButtonText: {
     color: '#F0EFFF',

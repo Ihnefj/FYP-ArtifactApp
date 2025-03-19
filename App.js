@@ -8,7 +8,7 @@ import FoodOverviewScreen from './src/components/screens/foodscreens/FoodOvervie
 import SettingsScreen from './src/components/screens/drawerscreens/settingsscreens/SettingsScreen';
 import ProfileScreen from './src/components/screens/drawerscreens/settingsscreens/ProfileScreen';
 import GoalsScreen from './src/components/screens/drawerscreens/settingsscreens/GoalsScreen';
-import ProgressScreen from './src/components/screens/tabscreens/ProgressScreen.js';
+import ProgressScreen from './src/components/screens/tabscreens/progscreens/ProgressScreen.js';
 import BarcodeScreen from './src/components/screens/tabscreens/BarcodeScreen.js';
 import FoodScreen from './src/components/screens/tabscreens/FoodScreen.js';
 import Icons from './src/components/UI/Icons';
@@ -28,6 +28,8 @@ import { TouchableOpacity, View } from 'react-native';
 import { useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { MealsProvider } from './src/contexts/MealsContext';
+import { ProfileProvider } from './src/contexts/ProfileContext';
+import { WeightProvider } from './src/contexts/WeightContext';
 
 registerRootComponent(App);
 
@@ -65,70 +67,74 @@ function App() {
     <NavigationContainer>
       <MealsProvider>
         <GoalsProvider>
-          <Drawer.Navigator
-            screenOptions={({ navigation }) => ({
-              drawerLabelStyle: { color: '#C4C3D0' },
-              drawerActiveTintColor: '#DCD6F7',
-              drawerActiveBackgroundColor: '#F4F2FF',
-              drawerType: 'front',
-              swipeEnabled: true,
-              swipeEdgeWidth: 100,
-              swipeMinDistance: 3,
-              overlayColor: 'rgba(0,0,0,0.5)',
-              drawerStyle: {
-                width: '70%'
-              },
-              gestureHandlerProps: {
-                hitSlop: { right: 15, left: 15 },
-                activeOffsetX: [-5, 5],
-                failOffsetY: [-20, 20],
-                minDist: 5,
-                minVelocity: 0.3
-              },
-              headerLeft: () => <DrawerButton navigation={navigation} />
-            })}
-          >
-            <Drawer.Screen
-              options={{
-                drawerIcon: () => <Icons.Home />,
-                headerTintColor: '#665679'
-              }}
-              name='Home'
-              component={BottomTabNavigator}
-            />
-            <Drawer.Screen
-              options={{
-                drawerIcon: () => <Icons.Settings />,
-                headerTintColor: '#665679'
-              }}
-              name='Settings'
-              component={SettingsStack}
-            />
-            <Drawer.Screen
-              options={{
-                drawerIcon: () => <Icons.Signin />,
-                headerTintColor: '#665679'
-              }}
-              name='Sign in'
-              component={SignStack}
-            />
-            <Drawer.Screen
-              options={{
-                drawerIcon: () => <Icons.Book />,
-                headerTintColor: '#665679'
-              }}
-              name='Learn nutrition'
-              component={LearnStack}
-            />
-            <Drawer.Screen
-              options={{
-                drawerIcon: () => <Icons.Help />,
-                headerTintColor: '#665679'
-              }}
-              name='Help'
-              component={HelpStack}
-            />
-          </Drawer.Navigator>
+          <WeightProvider>
+            <ProfileProvider>
+              <Drawer.Navigator
+                screenOptions={({ navigation }) => ({
+                  drawerLabelStyle: { color: '#C4C3D0' },
+                  drawerActiveTintColor: '#DCD6F7',
+                  drawerActiveBackgroundColor: '#F4F2FF',
+                  drawerType: 'front',
+                  swipeEnabled: true,
+                  swipeEdgeWidth: 100,
+                  swipeMinDistance: 3,
+                  overlayColor: 'rgba(0,0,0,0.5)',
+                  drawerStyle: {
+                    width: '70%'
+                  },
+                  gestureHandlerProps: {
+                    hitSlop: { right: 15, left: 15 },
+                    activeOffsetX: [-5, 5],
+                    failOffsetY: [-20, 20],
+                    minDist: 5,
+                    minVelocity: 0.3
+                  },
+                  headerLeft: () => <DrawerButton navigation={navigation} />
+                })}
+              >
+                <Drawer.Screen
+                  options={{
+                    drawerIcon: () => <Icons.Home />,
+                    headerTintColor: '#665679'
+                  }}
+                  name='Home'
+                  component={BottomTabNavigator}
+                />
+                <Drawer.Screen
+                  options={{
+                    drawerIcon: () => <Icons.Settings />,
+                    headerTintColor: '#665679'
+                  }}
+                  name='Settings'
+                  component={SettingsStack}
+                />
+                <Drawer.Screen
+                  options={{
+                    drawerIcon: () => <Icons.Signin />,
+                    headerTintColor: '#665679'
+                  }}
+                  name='Sign in'
+                  component={SignStack}
+                />
+                <Drawer.Screen
+                  options={{
+                    drawerIcon: () => <Icons.Book />,
+                    headerTintColor: '#665679'
+                  }}
+                  name='Learn nutrition'
+                  component={LearnStack}
+                />
+                <Drawer.Screen
+                  options={{
+                    drawerIcon: () => <Icons.Help />,
+                    headerTintColor: '#665679'
+                  }}
+                  name='Help'
+                  component={HelpStack}
+                />
+              </Drawer.Navigator>
+            </ProfileProvider>
+          </WeightProvider>
         </GoalsProvider>
       </MealsProvider>
     </NavigationContainer>

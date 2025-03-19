@@ -26,17 +26,21 @@ const FoodListView = ({
   handleDeleteFood,
   handleUpdate
 }) => {
+  // Initialisations -------------------------
+  // State -----------------------------------
+  // Handlers --------------------------------
+  // View ------------------------------------
   return (
     <Screen>
       <View style={styles.dateContainer}>
-        <TouchableOpacity onPress={goToPreviousDay} style={styles.dateButton}>
-          <Text style={styles.dateButtonText}>{'<'}</Text>
+        <TouchableOpacity onPress={goToPreviousDay} style={styles.arrowButton}>
+          <Text style={styles.arrowButtonText}>{'<'}</Text>
         </TouchableOpacity>
         <Text style={styles.dateText}>
           {format(selectedDate, 'EEEE, dd MMM yyyy')}
         </Text>
-        <TouchableOpacity onPress={goToNextDay} style={styles.dateButton}>
-          <Text style={styles.dateButtonText}>{'>'}</Text>
+        <TouchableOpacity onPress={goToNextDay} style={styles.arrowButton}>
+          <Text style={styles.arrowButtonText}>{'>'}</Text>
         </TouchableOpacity>
       </View>
 
@@ -44,7 +48,7 @@ const FoodListView = ({
         <View style={styles.headerContainer}>
           <View style={styles.circleContainer}>
             <Progress.Circle
-              size={100}
+              size={125}
               progress={Math.min(
                 Object.values(totalCalories).reduce(
                   (sum, kcal) => sum + kcal,
@@ -75,7 +79,7 @@ const FoodListView = ({
             </Text>
           </View>
 
-          <View style={styles.macrosContainer}>
+          <View>
             <Text style={styles.macroText}>
               {Math.round(totalMacros.Protein)}g Protein
             </Text>
@@ -113,6 +117,19 @@ const FoodListView = ({
                 progress={Math.min(totalMacros.Fat / goals.fat, 1)}
               />
               <Text style={styles.progressBarText}>{goals.fat}g</Text>
+            </View>
+
+            <Text style={styles.macroText}>
+              {Math.round(totalMacros.Fibre)}g Fibre
+            </Text>
+            <View style={styles.progressBarContainer}>
+              <Progress.Bar
+                style={styles.progressBar}
+                color='#E6E6FA'
+                height={12}
+                progress={Math.min(totalMacros.Fibre / goals.fibre, 1)}
+              />
+              <Text style={styles.progressBarText}>{goals.fibre}g</Text>
             </View>
           </View>
         </View>
@@ -171,10 +188,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     marginBottom: 15
   },
-  dateButton: {
+  arrowButton: {
     padding: 10
   },
-  dateButtonText: {
+  arrowButtonText: {
     fontSize: 20,
     color: '#F0EFFF'
   },
@@ -191,16 +208,15 @@ const styles = StyleSheet.create({
   },
   circleContainer: {
     alignItems: 'center',
-    width: 100
+    width: 125,
+    marginTop: 10
   },
   calorieGoalText: {
     color: '#665679',
-    fontSize: 14,
+    fontSize: 16,
     textAlign: 'center',
-    marginTop: 5
-  },
-  macrosContainer: {
-    paddingTop: -30
+    marginTop: 5,
+    fontWeight: 'semibold'
   },
   macroText: {
     fontSize: 16,

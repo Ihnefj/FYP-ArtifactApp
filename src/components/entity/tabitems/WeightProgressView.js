@@ -1,16 +1,16 @@
 import Screen from '../../layout/Screen';
-import ProgressView from '../../entity/tabitems/ProgressView';
+import { Text } from 'react-native';
 
-const ProgressScreen = () => {
+const WeightProgressView = () => {
   // Initialisations -------------------------
   // State -----------------------------------
   // Handlers --------------------------------
   // View ------------------------------------
   return (
     <Screen>
-      <ProgressView />
+      <Text>WeightProgressView</Text>
     </Screen>
   );
 };
 
-export default ProgressScreen;
+export default WeightProgressView;
