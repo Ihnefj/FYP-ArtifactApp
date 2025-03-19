@@ -4,7 +4,6 @@ const MealsContext = createContext();
 
 export function MealsProvider({ children }) {
   // Initialisations ---------------------
-
   // State -------------------------------
   const [mealsByDate, setMealsByDate] = useState({});
   const [subscribers] = useState(new Set());

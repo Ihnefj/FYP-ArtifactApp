@@ -30,7 +30,8 @@ const FoodListScreen = ({ navigation, route }) => {
   const [totalMacros, setTotalMacros] = useState({
     Protein: 0,
     Carbs: 0,
-    Fat: 0
+    Fat: 0,
+    Fibre: 0
   });
 
   const goals = getGoalForDate(selectedDate);
@@ -71,7 +72,8 @@ const FoodListScreen = ({ navigation, route }) => {
           calories: goals.calories,
           protein: goals.protein,
           carbs: goals.carbs,
-          fat: goals.fat
+          fat: goals.fat,
+          fibre: goals.fibre
         });
       }
     }
@@ -79,7 +81,7 @@ const FoodListScreen = ({ navigation, route }) => {
 
   // Handlers --------------------------------
   const recalculateTotals = () => {
-    const newTotals = { Calories: {}, Protein: 0, Carbs: 0, Fat: 0 };
+    const newTotals = { Calories: {}, Protein: 0, Carbs: 0, Fat: 0, Fibre: 0 };
 
     Object.entries(meals).forEach(([mealType, foods]) => {
       newTotals.Calories[mealType] = foods.reduce(
@@ -99,13 +101,18 @@ const FoodListScreen = ({ navigation, route }) => {
         (sum, food) => sum + (!isNaN(food.FoodFat) ? food.FoodFat : 0),
         0
       );
+      newTotals.Fibre += foods.reduce(
+        (sum, food) => sum + (!isNaN(food.FoodFibre) ? food.FoodFibre : 0),
+        0
+      );
     });
 
     setTotalCalories(newTotals.Calories);
     setTotalMacros({
       Protein: newTotals.Protein,
       Carbs: newTotals.Carbs,
-      Fat: newTotals.Fat
+      Fat: newTotals.Fat,
+      Fibre: newTotals.Fibre
     });
   };
 
@@ -171,16 +178,32 @@ const FoodListScreen = ({ navigation, route }) => {
     const parsedAmount =
       newAmount === '' ? 0 : parseFloat(newAmount) || foodToUpdate.FoodAmount;
     const baseCalories = foodToUpdate.BaseCalories || foodToUpdate.FoodCalories;
+    const baseProtein = foodToUpdate.BaseProtein || foodToUpdate.FoodProtein;
+    const baseCarbs = foodToUpdate.BaseCarbs || foodToUpdate.FoodCarbs;
+    const baseFat = foodToUpdate.BaseFat || foodToUpdate.FoodFat;
+    const baseFibre = foodToUpdate.BaseFibre || foodToUpdate.FoodFibre;
     const baseAmount = foodToUpdate.BaseAmount || 100;
 
     const ratio = parsedAmount / baseAmount;
     const newCalories = Math.round(baseCalories * ratio);
+    const newProtein = Math.round(baseProtein * ratio);
+    const newCarbs = Math.round(baseCarbs * ratio);
+    const newFat = Math.round(baseFat * ratio);
+    const newFibre = Math.round(baseFibre * ratio);
 
     const updatedFood = {
       ...foodToUpdate,
       FoodAmount: parsedAmount,
       FoodCalories: newCalories,
+      FoodProtein: newProtein,
+      FoodCarbs: newCarbs,
+      FoodFat: newFat,
+      FoodFibre: newFibre,
       BaseCalories: baseCalories,
+      BaseProtein: baseProtein,
+      BaseCarbs: baseCarbs,
+      BaseFat: baseFat,
+      BaseFibre: baseFibre,
       BaseAmount: baseAmount
     };
 

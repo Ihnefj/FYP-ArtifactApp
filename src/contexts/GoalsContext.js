@@ -9,14 +9,18 @@ export const GoalsProvider = ({ children }) => {
     calories: { min: 1700, max: 1700 },
     protein: 100,
     carbs: 250,
-    fat: 70
+    fat: 70,
+    fibre: 25,
+    weight: 70
   };
 
   const getDefaultGoals = () => ({
     calories: { min: 1700, max: 1700 },
     protein: 100,
     carbs: 250,
-    fat: 70
+    fat: 70,
+    fibre: 25,
+    weight: 70
   });
 
   // State -------------------------------
@@ -26,6 +30,8 @@ export const GoalsProvider = ({ children }) => {
   const [dailyProteinGoal, setDailyProteinGoal] = useState(defaultGoal.protein);
   const [dailyCarbsGoal, setDailyCarbsGoal] = useState(defaultGoal.carbs);
   const [dailyFatGoal, setDailyFatGoal] = useState(defaultGoal.fat);
+  const [dailyFibreGoal, setDailyFibreGoal] = useState(defaultGoal.fibre);
+  const [weightGoal, setWeightGoal] = useState(defaultGoal.weight);
   const [historicalGoals, setHistoricalGoals] = useState({});
 
   // Handlers ----------------------------
@@ -50,7 +56,9 @@ export const GoalsProvider = ({ children }) => {
       calories: dailyCalorieGoal,
       protein: dailyProteinGoal,
       carbs: dailyCarbsGoal,
-      fat: dailyFatGoal
+      fat: dailyFatGoal,
+      fibre: dailyFibreGoal,
+      weight: weightGoal
     };
   };
 
@@ -61,6 +69,8 @@ export const GoalsProvider = ({ children }) => {
     setDailyProteinGoal(newGoals.protein);
     setDailyCarbsGoal(newGoals.carbs);
     setDailyFatGoal(newGoals.fat);
+    setDailyFibreGoal(newGoals.fibre);
+    setWeightGoal(newGoals.weight);
     setHistoricalGoals((prev) => {
       const updatedGoals = { ...prev };
       Object.keys(updatedGoals).forEach((dateStr) => {
@@ -85,6 +95,8 @@ export const GoalsProvider = ({ children }) => {
         dailyProteinGoal,
         dailyCarbsGoal,
         dailyFatGoal,
+        dailyFibreGoal,
+        weightGoal,
         setGoals: updateGoals,
         getGoalForDate,
         storeHistoricalGoal,
