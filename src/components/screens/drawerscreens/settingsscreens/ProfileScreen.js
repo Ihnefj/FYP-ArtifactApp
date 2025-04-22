@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, ScrollView } from 'react-native';
 import { useProfile } from '../../../../contexts/ProfileContext';
-import { useNavigation } from '@react-navigation/native';
-import ProfileView from '../../../entity/settings/ProfileView';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import ProfileView from '../../../entity/settings/ProfileView.js';
 
 const DEFAULT_VALUES = {
+  measurementSystem: 'metric',
   weight: '70',
   height: '170',
   feet: '5',
@@ -14,6 +16,7 @@ const DEFAULT_VALUES = {
 
 const ProfileScreen = () => {
   // Initialisations -------------------------
+  const navigation = useNavigation();
   const {
     measurementSystem,
     weight,
@@ -22,20 +25,42 @@ const ProfileScreen = () => {
     inches,
     age,
     sex,
-    updateProfile
+    updateProfile,
+    profile,
+    loadProfile
   } = useProfile();
-  const navigation = useNavigation();
 
   // State -----------------------------------
   const [formData, setFormData] = useState({
-    systemData: measurementSystem,
-    weightData: weight?.toString() || DEFAULT_VALUES.weight,
-    heightData: height?.toString() || DEFAULT_VALUES.height,
-    feetData: feet?.toString() || DEFAULT_VALUES.feet,
-    inchesData: inches?.toString() || DEFAULT_VALUES.inches,
-    ageData: age?.toString() || DEFAULT_VALUES.age,
-    sexData: sex || DEFAULT_VALUES.sex
+    systemData: DEFAULT_VALUES.measurementSystem,
+    weightData: DEFAULT_VALUES.weight,
+    heightData: DEFAULT_VALUES.height,
+    feetData: DEFAULT_VALUES.feet,
+    inchesData: DEFAULT_VALUES.inches,
+    ageData: DEFAULT_VALUES.age,
+    sexData: DEFAULT_VALUES.sex
   });
+
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        systemData:
+          profile.measurementSystem || DEFAULT_VALUES.measurementSystem,
+        weightData: profile.weight?.toString() || DEFAULT_VALUES.weight,
+        heightData: profile.height?.toString() || DEFAULT_VALUES.height,
+        feetData: profile.feet?.toString() || DEFAULT_VALUES.feet,
+        inchesData: profile.inches?.toString() || DEFAULT_VALUES.inches,
+        ageData: profile.age?.toString() || DEFAULT_VALUES.age,
+        sexData: profile.sex || DEFAULT_VALUES.sex
+      });
+    }
+  }, [profile]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadProfile();
+    }, [loadProfile])
+  );
 
   // Handlers --------------------------------
   const convertToImperial = (cm, kg) => {
@@ -56,78 +81,6 @@ const ProfileScreen = () => {
       height: exactCm.toFixed(2),
       weight: (parseFloat(lbs) / 2.20462).toFixed(1)
     };
-  };
-
-  const resetForm = () => {
-    setFormData({
-      systemData: measurementSystem,
-      weightData: weight?.toString() || DEFAULT_VALUES.weight,
-      heightData: height?.toString() || DEFAULT_VALUES.height,
-      feetData: feet?.toString() || DEFAULT_VALUES.feet,
-      inchesData: inches?.toString() || DEFAULT_VALUES.inches,
-      ageData: age?.toString() || DEFAULT_VALUES.age,
-      sexData: sex || DEFAULT_VALUES.sex
-    });
-  };
-
-  const validateForm = () => {
-    const {
-      systemData,
-      weightData,
-      heightData,
-      feetData,
-      inchesData,
-      ageData,
-      sexData
-    } = formData;
-    const validInches =
-      systemData === 'imperial'
-        ? parseFloat(inchesData) >= 0 && parseFloat(inchesData) < 12
-        : true;
-
-    return (
-      weightData > 0 &&
-      (systemData === 'metric'
-        ? heightData > 0
-        : parseInt(feetData) >= 0 && validInches) &&
-      ageData > 0 &&
-      (sexData === 'male' || sexData === 'female') &&
-      (systemData === 'metric' || systemData === 'imperial')
-    );
-  };
-
-  const handleSave = () => {
-    const {
-      systemData,
-      weightData,
-      heightData,
-      feetData,
-      inchesData,
-      ageData,
-      sexData
-    } = formData;
-    let finalHeight = heightData;
-    if (systemData === 'imperial') {
-      const { height } = convertToMetric(feetData, inchesData, weightData);
-      finalHeight = height;
-    }
-
-    const newProfile = {
-      measurementSystem: systemData,
-      weight: weightData,
-      height: finalHeight,
-      feet: feetData,
-      inches: inchesData,
-      age: ageData,
-      sex: sexData
-    };
-
-    if (validateForm()) {
-      updateProfile(newProfile);
-      navigation.navigate('SettingsScreen');
-    } else {
-      resetForm();
-    }
   };
 
   const handleSystemChange = (newSystem) => {
@@ -166,20 +119,66 @@ const ProfileScreen = () => {
     }));
   };
 
+  const handleSave = () => {
+    const {
+      systemData,
+      weightData,
+      heightData,
+      feetData,
+      inchesData,
+      ageData,
+      sexData
+    } = formData;
+
+    let finalHeight = heightData;
+    if (systemData === 'imperial') {
+      const { height } = convertToMetric(feetData, inchesData, weightData);
+      finalHeight = height;
+    }
+
+    const newProfile = {
+      measurementSystem: systemData,
+      weight: weightData,
+      height: finalHeight,
+      feet: feetData,
+      inches: inchesData,
+      age: ageData,
+      sex: sexData
+    };
+
+    updateProfile(newProfile);
+    navigation.navigate('SettingsScreen');
+  };
+
   // View -----------------------------------
   return (
-    <ProfileView
-      {...formData}
-      handleSystemChange={handleSystemChange}
-      setWeightData={(value) => updateFormData('weightData', value)}
-      setHeightData={(value) => updateFormData('heightData', value)}
-      setFeetData={(value) => updateFormData('feetData', value)}
-      setInchesData={(value) => updateFormData('inchesData', value)}
-      setAgeData={(value) => updateFormData('ageData', value)}
-      setSexData={(value) => updateFormData('sexData', value)}
-      handleSave={handleSave}
-    />
+    <ScrollView style={styles.container}>
+      <ProfileView
+        systemData={formData.systemData}
+        weightData={formData.weightData}
+        heightData={formData.heightData}
+        feetData={formData.feetData}
+        inchesData={formData.inchesData}
+        ageData={formData.ageData}
+        sexData={formData.sexData}
+        handleSystemChange={handleSystemChange}
+        setWeightData={(value) => updateFormData('weightData', value)}
+        setHeightData={(value) => updateFormData('heightData', value)}
+        setFeetData={(value) => updateFormData('feetData', value)}
+        setInchesData={(value) => updateFormData('inchesData', value)}
+        setAgeData={(value) => updateFormData('ageData', value)}
+        setSexData={(value) => updateFormData('sexData', value)}
+        handleSave={handleSave}
+      />
+    </ScrollView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff'
+  }
+});
 
 export default ProfileScreen;

@@ -3,19 +3,35 @@ import {
   TouchableOpacity,
   Text,
   StyleSheet,
-  View
+  View,
+  Alert
 } from 'react-native';
 import Icons from '../../UI/Icons';
 
-const FoodOverview = ({ foods, onSelect, onView, onEdit }) => {
+const FoodOverview = ({ foods, onSelect, onView, onEdit, onDelete }) => {
   // Initialisations ---------------------
   // State -------------------------------
   // Handlers ----------------------------
+  const handleDelete = (food) => {
+    Alert.alert(
+      'Delete Food',
+      `Are you sure you want to delete ${food.FoodName}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => onDelete(food)
+        }
+      ]
+    );
+  };
+
   // View --------------------------------
   return (
     <FlatList
       data={foods}
-      keyExtractor={(item) => item.FoodID.toString()}
+      keyExtractor={(item) => item.FoodID}
       renderItem={({ item }) => (
         <View style={styles.foodItem}>
           <Text style={styles.foodText}>{item.FoodName}</Text>
@@ -32,12 +48,22 @@ const FoodOverview = ({ foods, onSelect, onView, onEdit }) => {
             >
               <Icons.Eye />
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={() => onEdit(item)}
-            >
-              <Icons.Edit />
-            </TouchableOpacity>
+            {item.Source !== 'USDA' && onEdit && (
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={() => onEdit(item)}
+              >
+                <Icons.Edit />
+              </TouchableOpacity>
+            )}
+            {item.Source !== 'USDA' && onDelete && (
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={() => handleDelete(item)}
+              >
+                <Icons.Delete />
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       )}
@@ -67,6 +93,9 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 5,
     backgroundColor: '#DDDCE5'
+  },
+  deleteButton: {
+    backgroundColor: '#ffebee'
   }
 });
 

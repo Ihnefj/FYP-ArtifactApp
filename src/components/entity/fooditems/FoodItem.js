@@ -2,9 +2,9 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useState, useEffect } from 'react';
 import Icons from '../../UI/Icons';
 
-const FoodItem = ({ food, onSelect, onDelete, onUpdate }) => {
+const FoodItem = ({ food, onDelete, onUpdate }) => {
   // Initialisations ---------------------
-  const baseCalories = food.BaseCalories || food.FoodCalories;
+  const baseCalories = food.BaseCalories || food.FoodCalories || 0;
   const baseAmount = food.BaseAmount || 100;
 
   // State -------------------------------
@@ -19,42 +19,49 @@ const FoodItem = ({ food, onSelect, onDelete, onUpdate }) => {
     }
   }, [food, isEditing]);
 
-  // Handlers ----------------------------
-  const calculatedCalories =
-    ((parseFloat(amount) || 0) / baseAmount) * baseCalories;
+  // Handlers --------------------------
+  const handleAmountChange = (newAmount) => {
+    setAmount(newAmount);
+    onUpdate(newAmount);
+  };
 
-  // View --------------------------------
+  const handleBlur = () => {
+    setIsEditing(false);
+    if (amount === '') {
+      setAmount('0');
+      onUpdate('0');
+    }
+  };
+
+  // View ------------------------------
+  const numericAmount = parseFloat(amount) || 0;
+  const calculatedCalories = (numericAmount / baseAmount) * baseCalories;
+
   return (
-    <Pressable onPress={() => onSelect(displayFood)}>
-      <View style={styles.container}>
-        <Text style={[styles.text, styles.expand]}>{displayFood.FoodName}</Text>
-        <TextInput
-          style={styles.amountInput}
-          value={amount}
-          keyboardType='numeric'
-          onFocus={() => setIsEditing(true)}
-          onBlur={() => {
-            setIsEditing(false);
-            if (amount === '') {
-              setAmount('0');
-              onUpdate('0');
-            }
-          }}
-          onChangeText={(newAmount) => {
-            setAmount(newAmount);
-            onUpdate(newAmount);
-          }}
-        />
-        <Text style={styles.unitText}>{displayFood.FoodUnit}</Text>
-        <Text style={[styles.text, styles.expand, styles.caloriesText]}>
-          {Math.round(calculatedCalories)}
-        </Text>
-        <Text style={styles.kcalText}>kcal</Text>
-        <Pressable onPress={() => onDelete(displayFood)}>
-          <Icons.Delete />
-        </Pressable>
-      </View>
-    </Pressable>
+    <View>
+      <Pressable>
+        <View style={styles.container}>
+          <Text style={[styles.text, styles.expand]}>
+            {displayFood.FoodName}
+          </Text>
+          <TextInput
+            style={styles.amountInput}
+            value={amount}
+            keyboardType='numeric'
+            onFocus={() => setIsEditing(true)}
+            onBlur={handleBlur}
+            onChangeText={handleAmountChange}
+          />
+          <Text style={styles.unitText}>{displayFood.FoodUnit || 'g'}</Text>
+          <Text style={[styles.text, styles.caloriesText]}>
+            {Math.round(calculatedCalories)} kcal
+          </Text>
+          <Pressable onPress={() => onDelete(displayFood)}>
+            <Icons.Delete />
+          </Pressable>
+        </View>
+      </Pressable>
+    </View>
   );
 };
 
@@ -72,14 +79,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#665679'
   },
-  kcalText: {
-    fontSize: 16,
-    color: '#C4C3D0',
-    marginLeft: 5,
-    marginRight: 15
-  },
   caloriesText: {
-    textAlign: 'right'
+    fontSize: 16,
+    color: '#665679',
+    marginLeft: 10,
+    marginRight: 10
   },
   unitText: {
     fontSize: 16,

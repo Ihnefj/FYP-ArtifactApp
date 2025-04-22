@@ -1,10 +1,21 @@
-import { createContext, useContext, useState } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback
+} from 'react';
 import { format } from 'date-fns';
+import { useAuth } from './AuthContext';
+import { userSettings } from '../data/userSettings';
+import { localSettings } from '../data/localSettings';
 
 const GoalsContext = createContext();
 
 export const GoalsProvider = ({ children }) => {
   // Initialisations ---------------------
+  const { user } = useAuth();
+
   const defaultGoal = {
     calories: { min: 1700, max: 1700 },
     protein: 100,
@@ -34,6 +45,51 @@ export const GoalsProvider = ({ children }) => {
   const [weightGoal, setWeightGoal] = useState(defaultGoal.weight);
   const [historicalGoals, setHistoricalGoals] = useState({});
 
+  const loadGoals = useCallback(async () => {
+    if (user) {
+      const savedGoals = await userSettings.getGoals(user.uid);
+      if (savedGoals) {
+        setDailyCalorieGoal(savedGoals.calories);
+        setDailyProteinGoal(savedGoals.protein);
+        setDailyCarbsGoal(savedGoals.carbs);
+        setDailyFatGoal(savedGoals.fat);
+        setDailyFibreGoal(savedGoals.fibre);
+        setWeightGoal(savedGoals.weight);
+        setHistoricalGoals(savedGoals.historical || {});
+      } else {
+        setDailyCalorieGoal(defaultGoal.calories);
+        setDailyProteinGoal(defaultGoal.protein);
+        setDailyCarbsGoal(defaultGoal.carbs);
+        setDailyFatGoal(defaultGoal.fat);
+        setDailyFibreGoal(defaultGoal.fibre);
+        setWeightGoal(defaultGoal.weight);
+        setHistoricalGoals({});
+      }
+    } else {
+      const localGoals = await localSettings.getGoals();
+      if (localGoals) {
+        setDailyCalorieGoal(localGoals.calories);
+        setDailyProteinGoal(localGoals.protein);
+        setDailyCarbsGoal(localGoals.carbs);
+        setDailyFatGoal(localGoals.fat);
+        setDailyFibreGoal(localGoals.fibre);
+        setWeightGoal(localGoals.weight);
+        setHistoricalGoals(localGoals.historical || {});
+      } else {
+        setDailyCalorieGoal(defaultGoal.calories);
+        setDailyProteinGoal(defaultGoal.protein);
+        setDailyCarbsGoal(defaultGoal.carbs);
+        setDailyFatGoal(defaultGoal.fat);
+        setDailyFibreGoal(defaultGoal.fibre);
+        setWeightGoal(defaultGoal.weight);
+        setHistoricalGoals({});
+      }
+    }
+  }, [user]);
+  useEffect(() => {
+    loadGoals();
+  }, [user, loadGoals]);
+
   // Handlers ----------------------------
   const storeHistoricalGoal = (date, goals) => {
     setHistoricalGoals((prev) => ({
@@ -62,7 +118,7 @@ export const GoalsProvider = ({ children }) => {
     };
   };
 
-  const updateGoals = (newGoals) => {
+  const updateGoals = async (newGoals) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     setDailyCalorieGoal(newGoals.calories);
@@ -85,6 +141,17 @@ export const GoalsProvider = ({ children }) => {
 
       return updatedGoals;
     });
+
+    const goalsToSave = {
+      ...newGoals,
+      historical: historicalGoals
+    };
+
+    if (user) {
+      await userSettings.saveGoals(user.uid, goalsToSave);
+    } else {
+      await localSettings.saveGoals(goalsToSave);
+    }
   };
 
   // View --------------------------------
@@ -100,7 +167,8 @@ export const GoalsProvider = ({ children }) => {
         setGoals: updateGoals,
         getGoalForDate,
         storeHistoricalGoal,
-        historicalGoals
+        historicalGoals,
+        loadGoals
       }}
     >
       {children}
