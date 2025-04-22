@@ -56,9 +56,30 @@ export function MealsProvider({ children }) {
           Dinner: [],
           Snacks: []
         };
+
+        const baseAmount = foodItem.FoodAmount || 100;
+        const ratio = baseAmount / 100;
+
+        const customFoodItem = {
+          ...foodItem,
+          uniqueID: `${foodItem.FoodID}-${Date.now()}`,
+          FoodAmount: baseAmount,
+          FoodCalories: Number((foodItem.FoodCalories * ratio).toFixed(1)),
+          FoodProtein: Number((foodItem.FoodProtein * ratio).toFixed(1)),
+          FoodCarbs: Number((foodItem.FoodCarbs * ratio).toFixed(1)),
+          FoodFat: Number((foodItem.FoodFat * ratio).toFixed(1)),
+          FoodFibre: Number((foodItem.FoodFibre * ratio).toFixed(1)),
+          BaseCalories: foodItem.FoodCalories,
+          BaseProtein: foodItem.FoodProtein,
+          BaseCarbs: foodItem.FoodCarbs,
+          BaseFat: foodItem.FoodFat,
+          BaseFibre: foodItem.FoodFibre,
+          BaseAmount: 100
+        };
+
         updatedMeals[date][mealType] = [
           ...(updatedMeals[date][mealType] || []),
-          { ...foodItem, uniqueID: `${foodItem.FoodID}-${Date.now()}` }
+          customFoodItem
         ];
         return updatedMeals;
       });

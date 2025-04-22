@@ -185,20 +185,20 @@ const FoodListScreen = ({ navigation, route }) => {
     const baseAmount = foodToUpdate.BaseAmount || 100;
 
     const ratio = parsedAmount / baseAmount;
-    const newCalories = Math.round(baseCalories * ratio);
-    const newProtein = Math.round(baseProtein * ratio);
-    const newCarbs = Math.round(baseCarbs * ratio);
-    const newFat = Math.round(baseFat * ratio);
-    const newFibre = Math.round(baseFibre * ratio);
+    const newCalories = baseCalories * ratio;
+    const newProtein = baseProtein * ratio;
+    const newCarbs = baseCarbs * ratio;
+    const newFat = baseFat * ratio;
+    const newFibre = baseFibre * ratio;
 
     const updatedFood = {
       ...foodToUpdate,
       FoodAmount: parsedAmount,
-      FoodCalories: newCalories,
-      FoodProtein: newProtein,
-      FoodCarbs: newCarbs,
-      FoodFat: newFat,
-      FoodFibre: newFibre,
+      FoodCalories: Number(newCalories.toFixed(1)),
+      FoodProtein: Number(newProtein.toFixed(1)),
+      FoodCarbs: Number(newCarbs.toFixed(1)),
+      FoodFat: Number(newFat.toFixed(1)),
+      FoodFibre: Number(newFibre.toFixed(1)),
       BaseCalories: baseCalories,
       BaseProtein: baseProtein,
       BaseCarbs: baseCarbs,

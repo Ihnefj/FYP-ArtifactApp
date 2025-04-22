@@ -22,6 +22,7 @@ const Moon = () => <Feather name='moon' size={16} color='#665679' />;
 const Home = () => <AntDesign name='home' size={16} color='#665679' />;
 const Settings = () => <Feather name='settings' size={16} color='#665679' />;
 const Signin = () => <AntDesign name='login' size={16} color='#665679' />;
+const Signout = () => <AntDesign name='logout' size={16} color='#665679' />;
 const Book = () => <Ionicons name='book-outline' size={16} color='#665679' />;
 const Help = () => <Feather name='help-circle' size={16} color='#665679' />;
 const Eye = () => (
@@ -57,6 +58,7 @@ Icons.Moon = Moon;
 Icons.Home = Home;
 Icons.Settings = Settings;
 Icons.Signin = Signin;
+Icons.Signout = Signout;
 Icons.Book = Book;
 Icons.Help = Help;
 Icons.Eye = Eye;

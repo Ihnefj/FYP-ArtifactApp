@@ -4,11 +4,15 @@ import Meals from '../../entity/fooditems/Meals';
 import { useEffect, useState } from 'react';
 import initialFoods from '../../../data/foods.js';
 import { ScrollView } from 'react-native';
+import { useAuth } from '../../../contexts/AuthContext';
+import { customFoods } from '../../../data/customFoods';
+import { Alert } from 'react-native';
 
 const FoodViewScreen = ({ navigation, route }) => {
   // Initialisations -------------------------
   const { food, onDelete, onModify, mealType } = route.params;
   const mealsInstance = Meals();
+  const { user } = useAuth();
 
   // State -----------------------------------
   const [updatedFood, setUpdatedFood] = useState(food);
@@ -33,19 +37,21 @@ const FoodViewScreen = ({ navigation, route }) => {
   }, [food]);
 
   // Handlers --------------------------------
-  const handleDelete = () => {
-    const foodIndex = initialFoods.findIndex(
-      (f) => f.FoodID === updatedFood.FoodID
-    );
-    if (foodIndex !== -1) {
-      initialFoods.splice(foodIndex, 1);
-    }
+  const handleDelete = async () => {
+    try {
+      if (user && updatedFood.id) {
+        await customFoods.deleteFirebaseFood(updatedFood.id, user.uid);
+      }
 
-    if (onDelete) {
-      onDelete(updatedFood, mealType);
-    }
+      if (onDelete) {
+        onDelete(updatedFood);
+      }
 
-    navigation.goBack();
+      navigation.goBack();
+    } catch (error) {
+      console.error('Error deleting food:', error);
+      Alert.alert('Error', 'Failed to delete food. Please try again.');
+    }
   };
 
   const gotoModifyScreen = () =>
