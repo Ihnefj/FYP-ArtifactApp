@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -28,6 +28,12 @@ const FoodListView = ({
 }) => {
   // Initialisations -------------------------
   // State -----------------------------------
+  const [localMeals, setLocalMeals] = useState(meals);
+
+  useEffect(() => {
+    setLocalMeals(meals);
+  }, [meals]);
+
   // Handlers --------------------------------
   // View ------------------------------------
   return (
@@ -134,7 +140,7 @@ const FoodListView = ({
           </View>
         </View>
 
-        {Object.entries(meals || {}).map(([mealType, foods = []]) => (
+        {Object.entries(localMeals || {}).map(([mealType, foods = []]) => (
           <View key={mealType} style={styles.mealSection}>
             <View style={styles.mealHeader}>
               <Text style={styles.mealTitle}>

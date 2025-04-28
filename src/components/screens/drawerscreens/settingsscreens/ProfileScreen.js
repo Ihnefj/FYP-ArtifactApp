@@ -17,18 +17,7 @@ const DEFAULT_VALUES = {
 const ProfileScreen = () => {
   // Initialisations -------------------------
   const navigation = useNavigation();
-  const {
-    measurementSystem,
-    weight,
-    height,
-    feet,
-    inches,
-    age,
-    sex,
-    updateProfile,
-    profile,
-    loadProfile
-  } = useProfile();
+  const { updateProfile, profile, loadProfile } = useProfile();
 
   // State -----------------------------------
   const [formData, setFormData] = useState({

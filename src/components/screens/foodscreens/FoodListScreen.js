@@ -4,14 +4,31 @@ import { format, addDays, subDays } from 'date-fns';
 import { useGoals } from '../../../contexts/GoalsContext';
 import { useMeals } from '../../../contexts/MealsContext';
 import FoodListView from '../../entity/fooditems/FoodListView';
+import { useAuth } from '../../../contexts/AuthContext';
+
+const generateUUID = () => {
+  return (
+    Math.random().toString(36).substring(2, 15) +
+    Math.random().toString(36).substring(2, 15)
+  );
+};
 
 const FoodListScreen = ({ navigation, route }) => {
   // Initialisations -------------------------
   LogBox.ignoreLogs([
     'Non-serializable values were found in the navigation state'
   ]);
-  const mealsInstance = useMeals();
+  const {
+    meals: allMeals,
+    addMeal,
+    updateMeal,
+    deleteMeal,
+    deleteMeals,
+    handleModifyFood,
+    getMeals
+  } = useMeals();
   const { getGoalForDate, storeHistoricalGoal, historicalGoals } = useGoals();
+  const { user } = useAuth();
 
   // State -----------------------------------
   const [selectedDate, setSelectedDate] = useState(() => {
@@ -35,7 +52,6 @@ const FoodListScreen = ({ navigation, route }) => {
   });
 
   const goals = getGoalForDate(selectedDate);
-
   const formattedDate = format(selectedDate, 'yyyy-MM-dd');
 
   useEffect(() => {
@@ -45,14 +61,9 @@ const FoodListScreen = ({ navigation, route }) => {
   }, [route.params?.selectedDate]);
 
   useEffect(() => {
-    const storedMeals = mealsInstance.getMeals(formattedDate);
-    setMeals(storedMeals);
-    const unsubscribe = mealsInstance.subscribe(() => {
-      const updatedMeals = mealsInstance.getMeals(formattedDate);
-      setMeals(updatedMeals);
-    });
-    return () => unsubscribe();
-  }, [formattedDate, mealsInstance]);
+    const mealsForDate = getMeals(formattedDate);
+    setMeals(mealsForDate);
+  }, [formattedDate, allMeals]);
 
   useEffect(() => {
     recalculateTotals();
@@ -117,10 +128,52 @@ const FoodListScreen = ({ navigation, route }) => {
   };
 
   const handleAddFood = (food, mealType) => {
-    mealsInstance.addFood(formattedDate, food, mealType);
-    const updatedMeals = mealsInstance.getMeals(formattedDate);
-    setMeals(updatedMeals);
-    recalculateTotals();
+    const originalAmount =
+      parseFloat(food.FoodAmount) || parseFloat(food.amount) || 100;
+    const originalUnit = food.FoodUnit || 'g';
+    const normalizedUnit = originalUnit.toLowerCase().trim();
+
+    let standardAmount;
+    if (normalizedUnit === 'g' || normalizedUnit === 'ml') {
+      standardAmount = 100;
+    } else if (
+      normalizedUnit === 'tbsp' ||
+      normalizedUnit === 'tsp' ||
+      normalizedUnit === 'serving' ||
+      normalizedUnit === 'servings'
+    ) {
+      standardAmount = 1;
+    } else {
+      standardAmount = originalAmount;
+    }
+
+    const ratio = standardAmount / originalAmount;
+    const standardCalories = Math.round(food.FoodCalories * ratio);
+    const standardProtein = Math.round(food.FoodProtein * ratio);
+    const standardCarbs = Math.round(food.FoodCarbs * ratio);
+    const standardFat = Math.round(food.FoodFat * ratio);
+    const standardFibre = Math.round(food.FoodFibre * ratio);
+
+    const uniqueId = generateUUID();
+    const newMeal = {
+      id: uniqueId,
+      date: formattedDate,
+      mealType,
+      FoodName: food.FoodName || 'Unnamed Food',
+      amount: standardAmount,
+      FoodAmount: standardAmount.toString(),
+      FoodUnit: originalUnit,
+      FoodCalories: standardCalories,
+      FoodProtein: standardProtein,
+      FoodCarbs: standardCarbs,
+      FoodFat: standardFat,
+      FoodFibre: standardFibre,
+      Source: food.Source || 'Custom',
+      FoodID: food.FoodID || uniqueId,
+      uniqueID: uniqueId
+    };
+
+    addMeal(newMeal);
   };
 
   const handleClearMeal = (mealType) => {
@@ -133,15 +186,8 @@ const FoodListScreen = ({ navigation, route }) => {
           text: 'Clear All',
           style: 'destructive',
           onPress: () => {
-            setMeals((prevMeals) => {
-              const updatedMeals = {
-                ...prevMeals,
-                [mealType]: []
-              };
-              mealsInstance.updateMeals(formattedDate, updatedMeals);
-              return updatedMeals;
-            });
-            recalculateTotals();
+            const mealIds = meals[mealType].map((meal) => meal.id);
+            deleteMeals(mealIds);
           }
         }
       ]
@@ -153,64 +199,55 @@ const FoodListScreen = ({ navigation, route }) => {
       'Delete warning',
       `Are you sure you want to delete food ${foodToDelete.FoodName}?`,
       [
-        { text: 'Cancel' },
+        { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
+          style: 'destructive',
           onPress: () => {
-            mealsInstance.handleDeleteFood(foodToDelete, mealType);
-            const updatedMeals = mealsInstance.getMeals(formattedDate);
-            setMeals(updatedMeals);
-            recalculateTotals();
+            deleteMeal(foodToDelete.id);
           }
         }
       ]
     );
   };
 
-  const handleModifyFood = (foodToModify, newAmount, mealType) => {
-    mealsInstance.handleModifyFood(foodToModify, mealType);
-    const updatedMeals = mealsInstance.getMeals(formattedDate);
-    setMeals(updatedMeals);
-    recalculateTotals();
+  const handleModify = (updatedFood) => {
+    const foodToUpdate = {
+      ...updatedFood,
+      id: updatedFood.FoodID || updatedFood.id
+    };
+    handleModifyFood(foodToUpdate);
   };
 
   const handleUpdate = (foodToUpdate, newAmount, mealType) => {
-    const parsedAmount =
-      newAmount === '' ? 0 : parseFloat(newAmount) || foodToUpdate.FoodAmount;
-    const baseCalories = foodToUpdate.BaseCalories || foodToUpdate.FoodCalories;
-    const baseProtein = foodToUpdate.BaseProtein || foodToUpdate.FoodProtein;
-    const baseCarbs = foodToUpdate.BaseCarbs || foodToUpdate.FoodCarbs;
-    const baseFat = foodToUpdate.BaseFat || foodToUpdate.FoodFat;
-    const baseFibre = foodToUpdate.BaseFibre || foodToUpdate.FoodFibre;
-    const baseAmount = foodToUpdate.BaseAmount || 100;
-
+    const parsedAmount = parseFloat(newAmount) || 0;
+    const baseAmount =
+      parseFloat(foodToUpdate.FoodAmount) ||
+      parseFloat(foodToUpdate.amount) ||
+      100;
     const ratio = parsedAmount / baseAmount;
-    const newCalories = baseCalories * ratio;
-    const newProtein = baseProtein * ratio;
-    const newCarbs = baseCarbs * ratio;
-    const newFat = baseFat * ratio;
-    const newFibre = baseFibre * ratio;
 
     const updatedFood = {
       ...foodToUpdate,
-      FoodAmount: parsedAmount,
-      FoodCalories: Number(newCalories.toFixed(1)),
-      FoodProtein: Number(newProtein.toFixed(1)),
-      FoodCarbs: Number(newCarbs.toFixed(1)),
-      FoodFat: Number(newFat.toFixed(1)),
-      FoodFibre: Number(newFibre.toFixed(1)),
-      BaseCalories: baseCalories,
-      BaseProtein: baseProtein,
-      BaseCarbs: baseCarbs,
-      BaseFat: baseFat,
-      BaseFibre: baseFibre,
-      BaseAmount: baseAmount
+      amount: parsedAmount,
+      FoodAmount: parsedAmount.toString(),
+      FoodCalories: Math.round(foodToUpdate.FoodCalories * ratio),
+      FoodProtein: Math.round(foodToUpdate.FoodProtein * ratio),
+      FoodCarbs: Math.round(foodToUpdate.FoodCarbs * ratio),
+      FoodFat: Math.round(foodToUpdate.FoodFat * ratio),
+      FoodFibre: Math.round(foodToUpdate.FoodFibre * ratio)
     };
 
-    mealsInstance.handleModifyFood(updatedFood, mealType);
-    const updatedMeals = mealsInstance.getMeals(formattedDate);
-    setMeals(updatedMeals);
-    recalculateTotals();
+    updateMeal(foodToUpdate.id, updatedFood);
+
+    const updatedMeals = { ...meals };
+    const mealIndex = updatedMeals[mealType].findIndex(
+      (m) => m.id === foodToUpdate.id
+    );
+    if (mealIndex !== -1) {
+      updatedMeals[mealType][mealIndex] = updatedFood;
+      setMeals(updatedMeals);
+    }
   };
 
   const gotoFoodView = (food, mealType) => {
@@ -218,7 +255,7 @@ const FoodListScreen = ({ navigation, route }) => {
       food,
       mealType,
       onDelete: handleDeleteFood,
-      onModify: (newFood) => handleUpdate(newFood, newFood.FoodAmount, mealType)
+      onModify: handleModify
     });
   };
 
@@ -226,7 +263,7 @@ const FoodListScreen = ({ navigation, route }) => {
     navigation.navigate('FoodOverviewScreen', {
       mealType,
       onAddFood: handleAddFood,
-      onModifyFood: handleModifyFood
+      onModify: handleModify
     });
   };
 

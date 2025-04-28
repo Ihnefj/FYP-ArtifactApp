@@ -8,8 +8,9 @@ import {
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import Screen from '../../../layout/Screen';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useGoals } from '../../../../contexts/GoalsContext';
+import { useProfile } from '../../../../contexts/ProfileContext';
 import { useNavigation } from '@react-navigation/native';
 
 const GoalsScreen = () => {
@@ -23,6 +24,7 @@ const GoalsScreen = () => {
     weightGoal,
     setGoals
   } = useGoals();
+  const { measurementSystem } = useProfile();
   const navigation = useNavigation();
 
   // State -------------------------------
@@ -47,13 +49,28 @@ const GoalsScreen = () => {
     dailyFibreGoal?.toString() || '25'
   );
   const [weightInput, setWeightInput] = useState(
-    weightGoal?.toString() || '70'
+    measurementSystem === 'imperial'
+      ? (weightGoal * 2.20462).toFixed(1)
+      : weightGoal?.toString() || '70'
   );
+
+  useEffect(() => {
+    if (measurementSystem === 'imperial') {
+      setWeightInput((weightGoal * 2.20462).toFixed(1));
+    } else {
+      setWeightInput(weightGoal?.toString() || '70');
+    }
+  }, [measurementSystem, weightGoal]);
 
   // Handlers ----------------------------
   const handleSave = () => {
     const minCalories = parseInt(calorieMinInput);
     const maxCalories = parseInt(calorieMaxInput);
+
+    const weightValue =
+      measurementSystem === 'imperial'
+        ? parseFloat(weightInput) / 2.20462
+        : parseFloat(weightInput);
 
     const newGoals = {
       calories: {
@@ -64,7 +81,7 @@ const GoalsScreen = () => {
       carbs: parseInt(carbsInput),
       fat: parseInt(fatInput),
       fibre: parseInt(fibreInput),
-      weight: parseFloat(weightInput)
+      weight: weightValue
     };
 
     if (
@@ -94,7 +111,11 @@ const GoalsScreen = () => {
       setCarbsInput(dailyCarbsGoal?.toString() || '250');
       setFatInput(dailyFatGoal?.toString() || '70');
       setFibreInput(dailyFibreGoal?.toString() || '25');
-      setWeightInput(weightGoal?.toString() || '70');
+      setWeightInput(
+        measurementSystem === 'imperial'
+          ? (weightGoal * 2.20462).toFixed(1)
+          : weightGoal?.toString() || '70'
+      );
     }
   };
 
@@ -176,9 +197,13 @@ const GoalsScreen = () => {
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Weight Goal (kg)</Text>
+          <Text style={styles.label}>
+            Weight Goal ({measurementSystem === 'imperial' ? 'lbs' : 'kg'})
+          </Text>
           <TextInput
-            placeholder='Enter weight goal'
+            placeholder={`Enter weight goal in ${
+              measurementSystem === 'imperial' ? 'pounds' : 'kilograms'
+            }`}
             value={weightInput}
             onChangeText={setWeightInput}
             keyboardType='numeric'

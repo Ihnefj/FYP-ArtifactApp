@@ -10,7 +10,6 @@ import ProfileScreen from './src/components/screens/drawerscreens/settingsscreen
 import GoalsScreen from './src/components/screens/drawerscreens/settingsscreens/GoalsScreen';
 import ProgressScreen from './src/components/screens/tabscreens/progscreens/ProgressScreen.js';
 import BarcodeScreen from './src/components/screens/tabscreens/BarcodeScreen.js';
-import FoodScreen from './src/components/screens/tabscreens/FoodScreen.js';
 import Icons from './src/components/UI/Icons';
 import 'react-native-gesture-handler';
 import { createDrawerNavigator } from '@react-navigation/drawer';
@@ -25,15 +24,14 @@ import SignInScreen from './src/components/screens/drawerscreens/signscreens/Sig
 import RegisterScreen from './src/components/screens/drawerscreens/signscreens/RegisterScreen.js';
 import ForgotScreen from './src/components/screens/drawerscreens/signscreens/ForgotScreen.js';
 import LogoutScreen from './src/components/screens/drawerscreens/signscreens/LogOutScreen.js';
-import { TouchableOpacity, View, Alert } from 'react-native';
-import { useCallback } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
-import { MealsProvider } from './src/contexts/MealsContext';
+import { TouchableOpacity, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import { MealsProvider, useMeals } from './src/contexts/MealsContext';
 import { ProfileProvider } from './src/contexts/ProfileContext';
 import { WeightProvider } from './src/contexts/WeightContext';
 import { AuthProvider } from './src/contexts/AuthContext';
-import { signOut } from 'firebase/auth';
-import { auth } from './src/FirebaseConfig';
+import { CustomFoodsProvider } from './src/contexts/CustomFoodsContext';
+import CustomFoodScreen from './src/components/screens/foodscreens/CustomFoodScreen.js';
 
 registerRootComponent(App);
 
@@ -42,12 +40,6 @@ const Drawer = createDrawerNavigator();
 const Tab = createBottomTabNavigator();
 
 const DrawerButton = ({ navigation }) => {
-  useFocusEffect(
-    useCallback(() => {
-      return () => {};
-    }, [])
-  );
-
   return (
     <TouchableOpacity
       style={{
@@ -66,92 +58,133 @@ const DrawerButton = ({ navigation }) => {
   );
 };
 
+const useMealSync = () => {
+  const { syncLocalToFirebase } = useMeals();
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const syncMeals = useCallback(
+    async (userId) => {
+      if (!userId || isSyncing) return;
+      try {
+        setIsSyncing(true);
+        await syncLocalToFirebase(userId);
+      } catch (error) {
+        console.error('Error syncing meals:', error);
+      } finally {
+        setIsSyncing(false);
+      }
+    },
+    [isSyncing, syncLocalToFirebase]
+  );
+
+  return { syncMeals, isSyncing };
+};
+
+function InnerApp() {
+  const { syncMeals } = useMealSync();
+
+  const handleUserLogin = useCallback(
+    async (user) => {
+      if (user) {
+        await syncMeals(user.uid);
+      }
+    },
+    [syncMeals]
+  );
+
+  return (
+    <AuthProvider onUserLogin={handleUserLogin}>
+      <GoalsProvider>
+        <WeightProvider>
+          <ProfileProvider>
+            <CustomFoodsProvider>
+              <Drawer.Navigator
+                screenOptions={({ navigation }) => ({
+                  drawerLabelStyle: { color: '#C4C3D0' },
+                  drawerActiveTintColor: '#DCD6F7',
+                  drawerActiveBackgroundColor: '#F4F2FF',
+                  drawerType: 'front',
+                  swipeEnabled: true,
+                  swipeEdgeWidth: 100,
+                  swipeMinDistance: 3,
+                  overlayColor: '#00000080',
+                  drawerStyle: {
+                    width: '70%'
+                  },
+                  gestureHandlerProps: {
+                    hitSlop: { right: 15, left: 15 },
+                    activeOffsetX: [-5, 5],
+                    failOffsetY: [-20, 20],
+                    minDist: 5,
+                    minVelocity: 0.3
+                  },
+                  headerLeft: () => <DrawerButton navigation={navigation} />
+                })}
+              >
+                <Drawer.Screen
+                  options={{
+                    drawerIcon: () => <Icons.Home />,
+                    headerTintColor: '#665679'
+                  }}
+                  name='Home'
+                  component={BottomTabNavigator}
+                />
+                <Drawer.Screen
+                  options={{
+                    drawerIcon: () => <Icons.Settings />,
+                    headerTintColor: '#665679'
+                  }}
+                  name='Settings'
+                  component={SettingsStack}
+                />
+                <Drawer.Screen
+                  options={{
+                    drawerIcon: () => <Icons.Signin />,
+                    headerTintColor: '#665679'
+                  }}
+                  name='Sign in / Register'
+                  component={SignStack}
+                />
+                <Drawer.Screen
+                  options={{
+                    drawerIcon: () => <Icons.Signout />,
+                    headerTintColor: '#665679',
+                    headerShown: false
+                  }}
+                  name='Log out'
+                  component={LogoutScreen}
+                />
+                <Drawer.Screen
+                  options={{
+                    drawerIcon: () => <Icons.Book />,
+                    headerTintColor: '#665679'
+                  }}
+                  name='Learn nutrition'
+                  component={LearnStack}
+                />
+                <Drawer.Screen
+                  options={{
+                    drawerIcon: () => <Icons.Help />,
+                    headerTintColor: '#665679'
+                  }}
+                  name='Help'
+                  component={HelpStack}
+                />
+              </Drawer.Navigator>
+            </CustomFoodsProvider>
+          </ProfileProvider>
+        </WeightProvider>
+      </GoalsProvider>
+    </AuthProvider>
+  );
+}
+
 function App() {
   return (
     <NavigationContainer>
-      <AuthProvider>
-        <MealsProvider>
-          <GoalsProvider>
-            <WeightProvider>
-              <ProfileProvider>
-                <Drawer.Navigator
-                  screenOptions={({ navigation }) => ({
-                    drawerLabelStyle: { color: '#C4C3D0' },
-                    drawerActiveTintColor: '#DCD6F7',
-                    drawerActiveBackgroundColor: '#F4F2FF',
-                    drawerType: 'front',
-                    swipeEnabled: true,
-                    swipeEdgeWidth: 100,
-                    swipeMinDistance: 3,
-                    overlayColor: 'rgba(0,0,0,0.5)',
-                    drawerStyle: {
-                      width: '70%'
-                    },
-                    gestureHandlerProps: {
-                      hitSlop: { right: 15, left: 15 },
-                      activeOffsetX: [-5, 5],
-                      failOffsetY: [-20, 20],
-                      minDist: 5,
-                      minVelocity: 0.3
-                    },
-                    headerLeft: () => <DrawerButton navigation={navigation} />
-                  })}
-                >
-                  <Drawer.Screen
-                    options={{
-                      drawerIcon: () => <Icons.Home />,
-                      headerTintColor: '#665679'
-                    }}
-                    name='Home'
-                    component={BottomTabNavigator}
-                  />
-                  <Drawer.Screen
-                    options={{
-                      drawerIcon: () => <Icons.Settings />,
-                      headerTintColor: '#665679'
-                    }}
-                    name='Settings'
-                    component={SettingsStack}
-                  />
-                  <Drawer.Screen
-                    options={{
-                      drawerIcon: () => <Icons.Signin />,
-                      headerTintColor: '#665679'
-                    }}
-                    name='Sign in'
-                    component={SignStack}
-                  />
-                  <Drawer.Screen
-                    options={{
-                      drawerIcon: () => <Icons.Signout />,
-                      headerTintColor: '#665679',
-                      headerShown: false
-                    }}
-                    name='Log out'
-                    component={LogoutScreen}
-                  />
-                  <Drawer.Screen
-                    options={{
-                      drawerIcon: () => <Icons.Book />,
-                      headerTintColor: '#665679'
-                    }}
-                    name='Learn nutrition'
-                    component={LearnStack}
-                  />
-                  <Drawer.Screen
-                    options={{
-                      drawerIcon: () => <Icons.Help />,
-                      headerTintColor: '#665679'
-                    }}
-                    name='Help'
-                    component={HelpStack}
-                  />
-                </Drawer.Navigator>
-              </ProfileProvider>
-            </WeightProvider>
-          </GoalsProvider>
-        </MealsProvider>
-      </AuthProvider>
+      <MealsProvider>
+        <InnerApp />
+      </MealsProvider>
     </NavigationContainer>
   );
 }
@@ -197,6 +230,12 @@ export const FoodStack = () => {
         name='FoodOverviewScreen'
         component={FoodOverviewScreen}
         options={{ title: 'Add to meal' }}
+      />
+
+      <Stack.Screen
+        name='CustomFoodScreen'
+        component={CustomFoodScreen}
+        options={{ title: 'My Foods' }}
       />
     </Stack.Navigator>
   );
@@ -328,6 +367,42 @@ export const SignStack = () => {
   );
 };
 
+export const CustomFoodStack = () => {
+  return (
+    <Stack.Navigator
+      initialRouteName='CustomFoodScreen'
+      screenOptions={{
+        headerStyle: { backgroundColor: '#665679' },
+        headerTintColor: 'white'
+      }}
+    >
+      <Stack.Screen
+        name='CustomFoodScreen'
+        component={CustomFoodScreen}
+        options={{ title: 'My Foods' }}
+      />
+
+      <Stack.Screen
+        name='FoodAddScreen'
+        component={FoodAddScreen}
+        options={{ title: 'Add food' }}
+      />
+
+      <Stack.Screen
+        name='FoodViewScreen'
+        component={FoodViewScreen}
+        options={{ title: 'View food' }}
+      />
+
+      <Stack.Screen
+        name='FoodModifyScreen'
+        component={FoodModifyScreen}
+        options={{ title: 'Modify food' }}
+      />
+    </Stack.Navigator>
+  );
+};
+
 function BottomTabNavigator() {
   // Initialisations -------------------------
   // State -----------------------------------
@@ -356,7 +431,7 @@ function BottomTabNavigator() {
       />
       <Tab.Screen
         name='Food'
-        component={FoodScreen}
+        component={CustomFoodStack}
         options={{ tabBarIcon: () => <Icons.Food />, headerShown: false }}
       />
       <Tab.Screen

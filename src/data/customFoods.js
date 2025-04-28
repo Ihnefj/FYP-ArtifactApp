@@ -12,14 +12,22 @@ import {
   getDoc
 } from 'firebase/firestore';
 
+// Initialisations ---------------------
 export const CUSTOM_FOODS_KEY = '@custom_foods';
 export const CUSTOM_FOODS_COLLECTION = 'customFoods';
 
+// State -------------------------------
+// Handlers ----------------------------
 export const customFoods = {
   async getLocalFoods() {
     try {
       const foods = await AsyncStorage.getItem(CUSTOM_FOODS_KEY);
-      return foods ? JSON.parse(foods) : [];
+      const parsedFoods = foods ? JSON.parse(foods) : [];
+
+      return parsedFoods.map((f) => ({
+        ...f,
+        amount: f.amount || 100
+      }));
     } catch (error) {
       console.error('Error getting local foods:', error);
       return [];
@@ -50,7 +58,15 @@ export const customFoods = {
         where('userId', '==', userId)
       );
       const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+      return querySnapshot.docs.map((doc) => {
+        const f = doc.data();
+        return {
+          id: doc.id,
+          ...f,
+          amount: f.amount || 100
+        };
+      });
     } catch (error) {
       console.error('Error getting Firebase foods:', error);
       return [];
@@ -72,19 +88,13 @@ export const customFoods = {
       return { id: docRef.id, ...food };
     } catch (error) {
       console.error('Error saving Firebase food:', error);
-
       return this.saveLocalFood(food);
     }
   },
 
   async updateFirebaseFood(foodId, updates, userId) {
-    if (!foodId) {
-      console.warn('No foodId provided for updateFirebaseFood');
-      return null;
-    }
-
-    if (!userId) {
-      console.warn('No userId provided for updateFirebaseFood');
+    if (!foodId || !userId) {
+      console.warn('FoodId or UserId is missing');
       return null;
     }
 
@@ -103,8 +113,15 @@ export const customFoods = {
         return null;
       }
 
-      await updateDoc(foodRef, updates);
-      return { id: foodId, ...updates };
+      const updateData = {
+        ...updates,
+        amount: updates.amount || 100
+      };
+
+      await updateDoc(foodRef, updateData);
+
+      console.log('Food updated successfully:', updateData);
+      return { id: foodId, ...updateData };
     } catch (error) {
       console.error('Error updating Firebase food:', error);
       throw error;
@@ -163,3 +180,5 @@ export const customFoods = {
     }
   }
 };
+
+// View --------------------------------

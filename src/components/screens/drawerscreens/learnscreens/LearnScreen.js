@@ -1,5 +1,5 @@
 import Screen from '../../../layout/Screen';
-import { Text } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 
 const LearnScreen = () => {
   // Initialisations -------------------------
@@ -8,9 +8,18 @@ const LearnScreen = () => {
   // View ------------------------------------
   return (
     <Screen>
-      <Text>LearnScreen</Text>
+      <Text style={styles.featureText}>This feature is under development</Text>
     </Screen>
   );
 };
+
+const styles = StyleSheet.create({
+  featureText: {
+    fontSize: 30,
+    fontWeight: 'bold',
+    color: '#665679',
+    textAlign: 'center'
+  }
+});
 
 export default LearnScreen;

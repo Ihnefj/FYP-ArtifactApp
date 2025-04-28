@@ -31,7 +31,7 @@ const FoodOverview = ({ foods, onSelect, onView, onEdit, onDelete }) => {
   return (
     <FlatList
       data={foods}
-      keyExtractor={(item) => item.FoodID}
+      keyExtractor={(item, index) => `${item.FoodID}-${index}`}
       renderItem={({ item }) => (
         <View style={styles.foodItem}>
           <Text style={styles.foodText}>{item.FoodName}</Text>

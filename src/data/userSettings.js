@@ -1,8 +1,11 @@
 import { db } from '../FirebaseConfig';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
+// Initialisations ---------------------
 const COLLECTION_NAME = 'userSettings';
 
+// State -------------------------------
+// Handlers ----------------------------
 export const userSettings = {
   async getProfile(userId) {
     if (!userId) return null;
@@ -48,3 +51,5 @@ export const userSettings = {
     }
   }
 };
+
+// View --------------------------------

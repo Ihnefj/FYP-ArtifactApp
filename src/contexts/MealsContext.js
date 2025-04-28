@@ -1,155 +1,232 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { auth, db } from '../FirebaseConfig';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 
+// Initialisations ---------------------
 const MealsContext = createContext();
+export const useMeals = () => useContext(MealsContext);
+export const MealsProvider = ({ children }) => {
+  const [meals, setMeals] = useState([]);
+  const LOCAL_STORAGE_KEY = '@meals';
+  const subscribers = [];
 
-export function MealsProvider({ children }) {
-  // Initialisations ---------------------
   // State -------------------------------
-  const [mealsByDate, setMealsByDate] = useState({});
-  const [subscribers] = useState(new Set());
-
   // Handlers ----------------------------
-  const subscribe = useCallback(
-    (callback) => {
-      subscribers.add(callback);
-      return () => subscribers.delete(callback);
-    },
-    [subscribers]
-  );
+  useEffect(() => {
+    const authInstance = getAuth();
+    const unsubscribe = onAuthStateChanged(authInstance, (user) => {
+      if (user) {
+        loadMealsFromFirebase(user.uid);
+      } else {
+        loadMealsFromStorage();
+      }
+    });
+    return unsubscribe;
+  }, []);
 
-  const notifySubscribers = useCallback(() => {
-    subscribers.forEach((callback) => callback());
-  }, [subscribers]);
-
-  const getMeals = useCallback(
-    (date) => {
-      return (
-        mealsByDate[date] || {
-          Breakfast: [],
-          Lunch: [],
-          Dinner: [],
-          Snacks: []
+  const loadMealsFromFirebase = async (uid) => {
+    try {
+      const docRef = doc(db, 'users', uid);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists() && docSnap.data()) {
+        const data = docSnap.data();
+        if (data.mealsData) {
+          setMeals(data.mealsData);
+        } else {
+          await setDoc(docRef, { mealsData: [] }, { merge: true });
+          setMeals([]);
         }
-      );
-    },
-    [mealsByDate]
-  );
-
-  const updateMeals = useCallback(
-    (date, updatedMeals) => {
-      setMealsByDate((prev) => ({
-        ...prev,
-        [date]: updatedMeals
-      }));
-      notifySubscribers();
-    },
-    [notifySubscribers]
-  );
-
-  const addFood = useCallback(
-    (date, foodItem, mealType) => {
-      setMealsByDate((prev) => {
-        const updatedMeals = { ...prev };
-        updatedMeals[date] = updatedMeals[date] || {
-          Breakfast: [],
-          Lunch: [],
-          Dinner: [],
-          Snacks: []
-        };
-
-        const baseAmount = foodItem.FoodAmount || 100;
-        const ratio = baseAmount / 100;
-
-        const customFoodItem = {
-          ...foodItem,
-          uniqueID: `${foodItem.FoodID}-${Date.now()}`,
-          FoodAmount: baseAmount,
-          FoodCalories: Number((foodItem.FoodCalories * ratio).toFixed(1)),
-          FoodProtein: Number((foodItem.FoodProtein * ratio).toFixed(1)),
-          FoodCarbs: Number((foodItem.FoodCarbs * ratio).toFixed(1)),
-          FoodFat: Number((foodItem.FoodFat * ratio).toFixed(1)),
-          FoodFibre: Number((foodItem.FoodFibre * ratio).toFixed(1)),
-          BaseCalories: foodItem.FoodCalories,
-          BaseProtein: foodItem.FoodProtein,
-          BaseCarbs: foodItem.FoodCarbs,
-          BaseFat: foodItem.FoodFat,
-          BaseFibre: foodItem.FoodFibre,
-          BaseAmount: 100
-        };
-
-        updatedMeals[date][mealType] = [
-          ...(updatedMeals[date][mealType] || []),
-          customFoodItem
-        ];
-        return updatedMeals;
-      });
-      notifySubscribers();
-    },
-    [notifySubscribers]
-  );
-
-  const handleModifyFood = useCallback(
-    (updatedFood, mealType) => {
-      setMealsByDate((prev) => {
-        const newMealsByDate = { ...prev };
-        Object.keys(newMealsByDate).forEach((date) => {
-          const meals = newMealsByDate[date];
-          if (meals && meals[mealType]) {
-            meals[mealType] = meals[mealType].map((food) => {
-              if (food.uniqueID === updatedFood.uniqueID) {
-                return {
-                  ...updatedFood,
-                  uniqueID: food.uniqueID
-                };
-              }
-              return food;
-            });
-          }
-        });
-        return newMealsByDate;
-      });
-      notifySubscribers();
-    },
-    [notifySubscribers]
-  );
-
-  const handleDeleteFood = useCallback(
-    (foodToDelete, mealType) => {
-      setMealsByDate((prev) => {
-        const newMealsByDate = { ...prev };
-        Object.keys(newMealsByDate).forEach((date) => {
-          if (newMealsByDate[date] && newMealsByDate[date][mealType]) {
-            newMealsByDate[date][mealType] = newMealsByDate[date][
-              mealType
-            ].filter((food) => food.uniqueID !== foodToDelete.uniqueID);
-          }
-        });
-        return newMealsByDate;
-      });
-      notifySubscribers();
-    },
-    [notifySubscribers]
-  );
-
-  // View --------------------------------
-  const value = {
-    getMeals,
-    updateMeals,
-    addFood,
-    handleModifyFood,
-    handleDeleteFood,
-    subscribe
+      } else {
+        await setDoc(docRef, { mealsData: [] });
+        setMeals([]);
+      }
+    } catch (error) {
+      console.error('Error loading meals from Firebase:', error);
+    }
   };
 
-  return (
-    <MealsContext.Provider value={value}>{children}</MealsContext.Provider>
-  );
-}
+  const loadMealsFromStorage = async () => {
+    try {
+      const storedMeals = await AsyncStorage.getItem(LOCAL_STORAGE_KEY);
+      if (storedMeals) {
+        setMeals(JSON.parse(storedMeals));
+      }
+    } catch (error) {
+      console.error('Error loading meals from AsyncStorage:', error);
+    }
+  };
 
-export function useMeals() {
-  const context = useContext(MealsContext);
-  if (!context) {
-    throw new Error('useMeals must be used within a MealsProvider');
-  }
-  return context;
-}
+  const saveMeals = async (newMeals) => {
+    setMeals(newMeals);
+    const user = auth.currentUser;
+    if (user && user.uid) {
+      try {
+        const docRef = doc(db, 'users', user.uid);
+        await setDoc(docRef, { mealsData: newMeals }, { merge: true });
+      } catch (error) {
+        console.error('Error saving meals to Firebase:', error);
+      }
+    } else {
+      try {
+        await AsyncStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newMeals));
+      } catch (error) {
+        console.error('Error saving meals to AsyncStorage:', error);
+      }
+    }
+
+    subscribers.forEach((callback) => callback());
+  };
+
+  const handleModifyFood = async (updatedFood) => {
+    const newMeals = meals.map((meal) => {
+      if (meal.id === updatedFood.id || meal.FoodID === updatedFood.FoodID) {
+        const originalAmount =
+          parseFloat(updatedFood.FoodAmount) ||
+          parseFloat(updatedFood.amount) ||
+          100;
+        const originalUnit = updatedFood.FoodUnit || 'g';
+
+        let standardAmount;
+        if (originalUnit === 'g' || originalUnit === 'ml') {
+          standardAmount = 100;
+        } else if (
+          originalUnit === 'tbsp' ||
+          originalUnit === 'tsp' ||
+          originalUnit === 'serving'
+        ) {
+          standardAmount = 1;
+        } else {
+          standardAmount = originalAmount;
+        }
+        const standardUnit = originalUnit;
+
+        const ratio = standardAmount / originalAmount;
+        const standardCalories = Math.round(updatedFood.FoodCalories * ratio);
+        const standardProtein = Math.round(updatedFood.FoodProtein * ratio);
+        const standardCarbs = Math.round(updatedFood.FoodCarbs * ratio);
+        const standardFat = Math.round(updatedFood.FoodFat * ratio);
+        const standardFibre = Math.round(updatedFood.FoodFibre * ratio);
+
+        return {
+          ...updatedFood,
+          uniqueID: meal.uniqueID,
+          amount: standardAmount,
+          FoodAmount: standardAmount.toString(),
+          FoodUnit: standardUnit,
+          FoodCalories: standardCalories,
+          FoodProtein: standardProtein,
+          FoodCarbs: standardCarbs,
+          FoodFat: standardFat,
+          FoodFibre: standardFibre
+        };
+      }
+      return meal;
+    });
+
+    const user = auth.currentUser;
+    if (user && user.uid) {
+      try {
+        const docRef = doc(db, 'users', user.uid);
+        await setDoc(docRef, { mealsData: newMeals }, { merge: true });
+      } catch (error) {
+        console.error('Error saving meals to Firebase:', error);
+        throw error;
+      }
+    }
+
+    setMeals(newMeals);
+    notifySubscribers();
+  };
+
+  const addMeal = (meal) => {
+    const newMeals = [...meals, meal];
+    saveMeals(newMeals);
+  };
+
+  const updateMeal = (mealId, updatedMeal) => {
+    const newMeals = meals.map((meal) =>
+      meal.id === mealId ? updatedMeal : meal
+    );
+    saveMeals(newMeals);
+  };
+
+  const deleteMeal = (mealId) => {
+    const newMeals = meals.filter((meal) => meal.id !== mealId);
+    saveMeals(newMeals);
+  };
+
+  const deleteMeals = (mealIds) => {
+    const newMeals = meals.filter((meal) => !mealIds.includes(meal.id));
+    saveMeals(newMeals);
+  };
+
+  const syncLocalToFirebase = async (userId) => {
+    if (!userId) {
+      console.warn('No userId provided for meal sync');
+      return;
+    }
+    try {
+      const storedMeals = await AsyncStorage.getItem(LOCAL_STORAGE_KEY);
+      if (storedMeals) {
+        const mealsArray = JSON.parse(storedMeals);
+        const docRef = doc(db, 'users', userId);
+        await setDoc(docRef, { mealsData: mealsArray }, { merge: true });
+        await AsyncStorage.removeItem(LOCAL_STORAGE_KEY);
+      }
+    } catch (error) {
+      console.error('Error syncing local meals to Firebase:', error);
+    }
+  };
+
+  const getMeals = (date) => {
+    const mealsForDate = {
+      Breakfast: [],
+      Lunch: [],
+      Dinner: [],
+      Snacks: []
+    };
+
+    meals.forEach((meal) => {
+      const mealDate = meal.date;
+      const mealType =
+        meal.mealType.charAt(0).toUpperCase() + meal.mealType.slice(1);
+
+      if (mealDate === date && mealsForDate[mealType]) {
+        mealsForDate[mealType].push(meal);
+      }
+    });
+
+    return mealsForDate;
+  };
+
+  const subscribe = (callback) => {
+    subscribers.push(callback);
+    return () => {
+      const index = subscribers.indexOf(callback);
+      if (index > -1) {
+        subscribers.splice(index, 1);
+      }
+    };
+  };
+
+  // View --------------------------------
+  return (
+    <MealsContext.Provider
+      value={{
+        meals,
+        addMeal,
+        updateMeal,
+        deleteMeal,
+        deleteMeals,
+        syncLocalToFirebase,
+        getMeals,
+        subscribe,
+        handleModifyFood
+      }}
+    >
+      {children}
+    </MealsContext.Provider>
+  );
+};

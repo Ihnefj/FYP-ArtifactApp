@@ -2,12 +2,15 @@ import axios from 'axios';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../FirebaseConfig';
 
+// Initialisations ---------------------
 const USDA_API_KEY = 'JGZvfmBboAab9DJahO0YEEH5AWRmhNrAtFMKMIRP';
 const USDA_SEARCH_URL = 'https://api.nal.usda.gov/fdc/v1/foods/search';
 
+// State -------------------------------
+// Handlers ----------------------------
 export const foodSearch = async (rawQuery) => {
   const query = rawQuery.trim().toLowerCase();
-  if (query.length < 3) return [];
+  if (query.length < 2) return [];
 
   const cachedRef = doc(db, 'usdaCache', query);
   const cachedSnap = await getDoc(cachedRef);
@@ -87,19 +90,13 @@ export const foodSearch = async (rawQuery) => {
           .toString(36)
           .substring(2, 10)}`,
         FoodName: item.description,
-        FoodAmount: gramWeight,
+        amount: gramWeight,
         FoodUnit: unitLabel,
         FoodCalories: calories,
         FoodProtein: protein,
         FoodCarbs: carbs,
         FoodFat: fat,
         FoodFibre: fibre,
-        BaseCalories: calories,
-        BaseProtein: protein,
-        BaseCarbs: carbs,
-        BaseFat: fat,
-        BaseFibre: fibre,
-        BaseAmount: gramWeight,
         Source: 'USDA',
         score
       };
@@ -120,3 +117,5 @@ export const foodSearch = async (rawQuery) => {
   await setDoc(cachedRef, { results: uniqueByName.slice(0, 10) });
   return uniqueByName.slice(0, 10);
 };
+
+// View --------------------------------
