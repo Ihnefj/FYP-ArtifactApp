@@ -4,59 +4,69 @@ import Icons from '../../UI/Icons';
 
 const FoodItem = ({ food, onDelete, onUpdate }) => {
   // Initialisations ---------------------
-  const baseCalories = food.BaseCalories || food.FoodCalories || 0;
-  const baseAmount = food.BaseAmount || 100;
+  const baseAmount = parseInt(food.FoodAmount) || parseInt(food.amount) || 100;
+  const baseCalories = food.FoodCalories || 0;
+  const baseProtein = food.FoodProtein || 0;
+  const baseCarbs = food.FoodCarbs || 0;
+  const baseFat = food.FoodFat || 0;
+  const baseFibre = food.FoodFibre || 0;
 
   // State -------------------------------
-  const [amount, setAmount] = useState(food.FoodAmount.toString());
-  const [displayFood, setDisplayFood] = useState(food);
+  const [amount, setAmount] = useState(baseAmount);
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
-    if (!isEditing) {
-      setDisplayFood(food);
-      setAmount(food.FoodAmount.toString());
-    }
-  }, [food, isEditing]);
+    const newAmount = parseInt(food.FoodAmount) || parseInt(food.amount) || 100;
+    setAmount(newAmount);
+  }, [food.FoodAmount, food.amount]);
 
   // Handlers --------------------------
   const handleAmountChange = (newAmount) => {
-    setAmount(newAmount);
-    onUpdate(newAmount);
+    const parsedAmount = parseInt(newAmount) || 0;
+    setAmount(parsedAmount);
+
+    const ratio = parsedAmount / baseAmount;
+    const updatedFood = {
+      ...food,
+      amount: parsedAmount,
+      FoodAmount: parsedAmount.toString(),
+      FoodCalories: Math.round(baseCalories * ratio),
+      FoodProtein: Math.round(baseProtein * ratio),
+      FoodCarbs: Math.round(baseCarbs * ratio),
+      FoodFat: Math.round(baseFat * ratio),
+      FoodFibre: Math.round(baseFibre * ratio)
+    };
+
+    onUpdate(parsedAmount);
   };
 
   const handleBlur = () => {
     setIsEditing(false);
     if (amount === '') {
-      setAmount('0');
-      onUpdate('0');
+      setAmount(0);
+      handleAmountChange('0');
     }
   };
 
   // View ------------------------------
-  const numericAmount = parseFloat(amount) || 0;
-  const calculatedCalories = (numericAmount / baseAmount) * baseCalories;
-
   return (
     <View>
       <Pressable>
         <View style={styles.container}>
-          <Text style={[styles.text, styles.expand]}>
-            {displayFood.FoodName}
-          </Text>
+          <Text style={[styles.text, styles.expand]}>{food.FoodName}</Text>
           <TextInput
             style={styles.amountInput}
-            value={amount}
+            value={amount.toString()}
             keyboardType='numeric'
             onFocus={() => setIsEditing(true)}
             onBlur={handleBlur}
             onChangeText={handleAmountChange}
           />
-          <Text style={styles.unitText}>{displayFood.FoodUnit || 'g'}</Text>
+          <Text style={styles.unitText}>{food.FoodUnit || 'g'}</Text>
           <Text style={[styles.text, styles.caloriesText]}>
-            {Math.round(calculatedCalories)} kcal
+            {Math.round(baseCalories * (amount / baseAmount))} kcal
           </Text>
-          <Pressable onPress={() => onDelete(displayFood)}>
+          <Pressable onPress={() => onDelete(food)}>
             <Icons.Delete />
           </Pressable>
         </View>

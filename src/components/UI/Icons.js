@@ -45,6 +45,7 @@ const Question = () => (
   />
 );
 const Map = () => <Fontisto name='map' size={16} color='#665679' />;
+const Sync = () => <Ionicons name='sync' size={20} color='#665679' />;
 
 Icons.Add = Add;
 Icons.Close = Close;
@@ -67,5 +68,6 @@ Icons.Progress = Progress;
 Icons.Scanner = Scanner;
 Icons.Question = Question;
 Icons.Map = Map;
+Icons.Sync = Sync;
 
 export default Icons;

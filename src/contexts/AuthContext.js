@@ -1,14 +1,32 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { auth } from '../FirebaseConfig';
-import { onAuthStateChanged } from 'firebase/auth';
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from 'firebase/auth';
 import { Alert } from 'react-native';
 import { customFoods } from '../data/customFoods';
 import { localSettings } from '../data/localSettings';
 import { userSettings } from '../data/userSettings';
+import { weightData } from '../data/weightData';
 
-const AuthContext = createContext({});
+// Initialisations ---------------------
+const AuthContext = createContext();
 
-export const AuthProvider = ({ children }) => {
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+// State -------------------------------
+
+// Handlers ----------------------------
+export const AuthProvider = ({ children, onUserLogin }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [previousUser, setPreviousUser] = useState(null);
@@ -20,9 +38,13 @@ export const AuthProvider = ({ children }) => {
           const localFoods = await customFoods.getLocalFoods();
           const localProfile = await localSettings.getProfile();
           const localGoals = await localSettings.getGoals();
+          const localWeightEntries = await weightData.getLocalWeightEntries();
 
           const hasLocalData =
-            localFoods.length > 0 || localProfile || localGoals;
+            localFoods.length > 0 ||
+            localProfile ||
+            localGoals ||
+            localWeightEntries.length > 0;
 
           if (hasLocalData) {
             Alert.alert(
@@ -52,6 +74,9 @@ export const AuthProvider = ({ children }) => {
                           localGoals
                         );
                       }
+                      if (localWeightEntries.length > 0) {
+                        await weightData.syncLocalToFirebase(currentUser.uid);
+                      }
                       await localSettings.clearLocalSettings();
 
                       Alert.alert(
@@ -75,6 +100,10 @@ export const AuthProvider = ({ children }) => {
         setPreviousUser(currentUser);
         setUser(currentUser);
         setLoading(false);
+
+        if (currentUser && onUserLogin) {
+          onUserLogin(currentUser);
+        }
       });
 
       return unsubscribe;
@@ -83,22 +112,59 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
       return () => {};
     }
-  }, [previousUser]);
+  }, [previousUser, onUserLogin]);
+
+  const login = async (email, password) => {
+    try {
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      return userCredential.user;
+    } catch (error) {
+      console.error('Error logging in:', error);
+      throw error;
+    }
+  };
+
+  const signup = async (email, password) => {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      return userCredential.user;
+    } catch (error) {
+      console.error('Error signing up:', error);
+      throw error;
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error('Error logging out:', error);
+      throw error;
+    }
+  };
+
+  // View --------------------------------
+  const value = {
+    user,
+    loading,
+    login,
+    signup,
+    logout
+  };
 
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={value}>
       {!loading && children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    console.warn('useAuth must be used within an AuthProvider');
-    return { user: null, loading: false };
-  }
-  return context;
 };
 
 export default AuthContext;

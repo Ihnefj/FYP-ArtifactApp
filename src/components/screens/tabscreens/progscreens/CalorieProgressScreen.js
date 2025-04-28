@@ -5,14 +5,23 @@ import { useMeals } from '../../../../contexts/MealsContext';
 import { useGoals } from '../../../../contexts/GoalsContext';
 import { useNavigation } from '@react-navigation/native';
 
+// Initialisations ---------------------
 const CalorieProgScreen = () => {
-  // Initialisations ---------------------
-  const mealsInstance = useMeals();
+  const { meals, getMeals } = useMeals();
   const { getGoalForDate } = useGoals();
   const navigation = useNavigation();
 
   // State -------------------------------
   const [markedDates, setMarkedDates] = useState({});
+  const [currentMonth, setCurrentMonth] = useState(
+    new Date().toISOString().split('T')[0].substring(0, 7)
+  );
+  const [goalStats, setGoalStats] = useState({
+    met: 0,
+    above: 0,
+    below: 0,
+    total: 0
+  });
 
   // Handlers ----------------------------
   const calculateMarkedDates = useCallback(() => {
@@ -20,9 +29,10 @@ const CalorieProgScreen = () => {
     const today = new Date();
     const startDate = new Date(today);
     startDate.setDate(startDate.getDate() - 30);
-
     const endDate = new Date(today);
     endDate.setDate(endDate.getDate() + 30);
+
+    const stats = { met: 0, above: 0, below: 0, total: 0 };
 
     for (
       let d = new Date(startDate);
@@ -30,56 +40,71 @@ const CalorieProgScreen = () => {
       d.setDate(d.getDate() + 1)
     ) {
       const formattedDate = d.toISOString().split('T')[0];
-      const meals = mealsInstance.getMeals(formattedDate);
+      const monthYear = formattedDate.substring(0, 7);
+      const mealsForDate = getMeals(formattedDate);
       const goals = getGoalForDate(d);
 
       let totalCalories = 0;
-      Object.keys(meals).forEach((mealType) => {
-        const mealCalories = meals[mealType].reduce(
+      Object.keys(mealsForDate).forEach((mealType) => {
+        totalCalories += mealsForDate[mealType].reduce(
           (sum, food) => sum + Number(food.FoodCalories || 0),
           0
         );
-        totalCalories += mealCalories;
       });
 
       const roundedTotal = Math.round(totalCalories);
-      const calorieGoal = goals.calories;
+      const calorieGoal = goals?.calories;
 
-      if (totalCalories > 0) {
-        const getMarkerColor = () => {
-          if (typeof calorieGoal === 'object') {
-            if (
-              roundedTotal >= calorieGoal.min &&
-              roundedTotal <= calorieGoal.max
-            ) {
-              return '#567279B3';
-            } else if (roundedTotal > calorieGoal.max) {
-              return '#795679B3';
-            }
-            return '#565879B3';
+      if (totalCalories > 0 && calorieGoal) {
+        let markerColor;
+        let goalStatus;
+
+        if (typeof calorieGoal === 'object') {
+          if (
+            roundedTotal >= calorieGoal.min &&
+            roundedTotal <= calorieGoal.max
+          ) {
+            markerColor = '#567279B3';
+            goalStatus = 'met';
+          } else if (roundedTotal > calorieGoal.max) {
+            markerColor = '#795679B3';
+            goalStatus = 'above';
           } else {
-            if (Math.abs(roundedTotal - calorieGoal) < 1) {
-              return '#567279B3';
-            } else if (roundedTotal > calorieGoal) {
-              return '#795679B3';
-            }
-            return '#565879B3';
+            markerColor = '#565879B3';
+            goalStatus = 'below';
           }
-        };
+        } else {
+          if (Math.abs(roundedTotal - calorieGoal) < 1) {
+            markerColor = '#567279B3';
+            goalStatus = 'met';
+          } else if (roundedTotal > calorieGoal) {
+            markerColor = '#795679B3';
+            goalStatus = 'above';
+          } else {
+            markerColor = '#565879B3';
+            goalStatus = 'below';
+          }
+        }
 
         dates[formattedDate] = {
           customStyles: {
             container: {
-              backgroundColor: getMarkerColor(),
+              backgroundColor: markerColor,
               borderRadius: 20
             }
           }
         };
+
+        if (monthYear === currentMonth) {
+          stats[goalStatus]++;
+          stats.total++;
+        }
       }
     }
 
     setMarkedDates(dates);
-  }, [mealsInstance, getGoalForDate]);
+    setGoalStats(stats);
+  }, [meals, getMeals, getGoalForDate, currentMonth]);
 
   const handleDayPress = (day) => {
     navigation.navigate('HomeTab', {
@@ -88,19 +113,20 @@ const CalorieProgScreen = () => {
     });
   };
 
+  const handleMonthChange = (month) => {
+    setCurrentMonth(month.dateString.substring(0, 7));
+  };
+
+  const calculatePercentage = (value) => {
+    if (goalStats.total === 0) return 0;
+    return Math.round((value / goalStats.total) * 100);
+  };
+
   useEffect(() => {
     calculateMarkedDates();
+  }, [meals, currentMonth, calculateMarkedDates]);
 
-    const unsubscribe = mealsInstance.subscribe(() => {
-      calculateMarkedDates();
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, [calculateMarkedDates]);
-
-  // View ------------------------------------
+  // View --------------------------------
   return (
     <>
       <Calendar
@@ -121,22 +147,32 @@ const CalorieProgScreen = () => {
           arrowColor: '#665679'
         }}
         markingType='custom'
-        enableSwipeMonths={true}
+        enableSwipeMonths
         current={new Date().toISOString().split('T')[0]}
         onDayPress={handleDayPress}
+        onMonthChange={handleMonthChange}
       />
       <View style={styles.markerGuide}>
         <View style={styles.markerGuideItem}>
           <View style={[styles.markerDot, { backgroundColor: '#567279' }]} />
           <Text style={styles.markerGuideText}>Goal Met</Text>
+          <Text style={styles.percentageText}>
+            {calculatePercentage(goalStats.met)}%
+          </Text>
         </View>
         <View style={styles.markerGuideItem}>
           <View style={[styles.markerDot, { backgroundColor: '#795679' }]} />
           <Text style={styles.markerGuideText}>Above Goal</Text>
+          <Text style={styles.percentageText}>
+            {calculatePercentage(goalStats.above)}%
+          </Text>
         </View>
         <View style={styles.markerGuideItem}>
           <View style={[styles.markerDot, { backgroundColor: '#565879' }]} />
           <Text style={styles.markerGuideText}>Below Goal</Text>
+          <Text style={styles.percentageText}>
+            {calculatePercentage(goalStats.below)}%
+          </Text>
         </View>
       </View>
     </>
@@ -153,7 +189,8 @@ const styles = StyleSheet.create({
   markerGuideItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 5
+    marginVertical: 5,
+    justifyContent: 'space-between'
   },
   markerDot: {
     width: 20,
@@ -163,7 +200,13 @@ const styles = StyleSheet.create({
   },
   markerGuideText: {
     color: '#665679',
-    fontSize: 14
+    fontSize: 14,
+    flex: 1
+  },
+  percentageText: {
+    color: '#665679',
+    fontSize: 14,
+    fontWeight: 'bold'
   }
 });
 

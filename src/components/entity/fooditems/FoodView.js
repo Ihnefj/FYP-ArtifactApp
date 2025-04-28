@@ -39,6 +39,9 @@ const FoodView = ({ food, onDelete, onModify }) => {
         <Text style={styles.text}>
           Fat: {food.FoodFat} <Text style={styles.dimText}>g</Text>
         </Text>
+        <Text style={styles.text}>
+          Fibre: {food.FoodFibre} <Text style={styles.dimText}>g</Text>
+        </Text>
       </View>
 
       <ButtonTray>

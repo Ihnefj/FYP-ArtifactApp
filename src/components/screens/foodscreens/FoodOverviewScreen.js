@@ -10,78 +10,68 @@ import {
   ActivityIndicator,
   Alert
 } from 'react-native';
-import FoodOverview from '../../entity/fooditems/FoodOverview.js';
-import initialFoods from '../../../data/foods.js';
-import Meals from '../../entity/fooditems/Meals.js';
-import Screen from '../../layout/Screen.js';
-import { useAuth } from '../../../contexts/AuthContext';
-import { customFoods, CUSTOM_FOODS_KEY } from '../../../data/customFoods';
-import Icons from '../../UI/Icons.js';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import debounce from 'lodash/debounce';
+import { useMeals } from '../../../contexts/MealsContext';
+import { format } from 'date-fns';
+import { useCustomFoods } from '../../../contexts/CustomFoodsContext';
+
+import Screen from '../../layout/Screen.js';
+import FoodOverview from '../../entity/fooditems/FoodOverview.js';
+import Icons from '../../UI/Icons.js';
+import initialFoods from '../../../data/foods.js';
 import { foodSearch } from '../../../data/foodSearch.js';
+import { useAuth } from '../../../contexts/AuthContext';
+
+// Initialisations ---------------------
+const generateUUID = () => {
+  return (
+    Math.random().toString(36).substring(2, 15) +
+    Math.random().toString(36).substring(2, 15)
+  );
+};
 
 const FoodOverviewScreen = () => {
   LogBox.ignoreLogs([
     'Non-serializable values were found in the navigation state'
   ]);
+
   const route = useRoute();
   const navigation = useNavigation();
-  const { mealType } = route.params;
-  const mealsInstance = Meals();
   const { user } = useAuth();
+  const { mealType } = route.params;
+  const { addMeal } = useMeals();
+  const { customFoodsList, deleteCustomFood, addCustomFood, updateCustomFood } =
+    useCustomFoods();
 
+  // State -------------------------------
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredFoods, setFilteredFoods] = useState(initialFoods);
-  const [personalFoods, setPersonalFoods] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const debouncedSearch = debounce((text) => {
     handleSearch(text);
   }, 500);
 
+  // Handlers ----------------------------
   useEffect(() => {
-    loadPersonalFoods();
-  }, [user]);
-
-  const loadPersonalFoods = async () => {
-    try {
-      setIsLoading(true);
-      let foods = [];
-      if (user) {
-        foods = await customFoods.getFirebaseFoods(user.uid);
-      } else {
-        foods = await customFoods.getLocalFoods();
-      }
-
-      foods = foods.map((f) => ({ ...f, Source: 'Custom' }));
-
-      setPersonalFoods(foods);
-      setFilteredFoods([...initialFoods, ...foods]);
-    } catch (error) {
-      console.error('Error loading personal foods:', error);
-      setFilteredFoods(initialFoods);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    setFilteredFoods([...initialFoods]);
+    setIsLoading(false);
+  }, [customFoodsList]);
 
   const handleSearch = async (query) => {
     if (!query) {
-      setFilteredFoods([...initialFoods, ...personalFoods]);
+      setFilteredFoods([...initialFoods]);
       return;
     }
 
-    const lowercasedQuery = query.toLowerCase();
-    const localResults = [...initialFoods, ...personalFoods].filter((food) =>
-      food.FoodName.toLowerCase().includes(lowercasedQuery)
+    const localResults = initialFoods.filter((food) =>
+      food.FoodName.toLowerCase().includes(query.toLowerCase())
     );
 
     setFilteredFoods(localResults);
 
     try {
       const remoteResults = await foodSearch(query);
-
       const existingIds = new Set(localResults.map((f) => f.FoodID));
       const uniqueRemoteResults = remoteResults.filter(
         (f) => !existingIds.has(f.FoodID)
@@ -94,81 +84,97 @@ const FoodOverviewScreen = () => {
   };
 
   const handleSelectFood = (food) => {
-    mealsInstance.addFood(food, mealType);
-    route.params.onAddFood(food, mealType);
-    navigation.goBack();
-  };
+    const originalAmount =
+      parseFloat(food.FoodAmount) || parseFloat(food.amount) || 100;
+    const originalUnit = food.FoodUnit || 'g';
+    const normalizedUnit = originalUnit.toLowerCase().trim();
 
-  const handleModifyFood = async (updatedFood) => {
-    try {
-      if (user) {
-        await customFoods.updateFirebaseFood(
-          updatedFood.id,
-          updatedFood,
-          user.uid
-        );
-      }
-      setPersonalFoods((prevFoods) =>
-        prevFoods.map((food) =>
-          food.FoodID === updatedFood.FoodID ? updatedFood : food
-        )
-      );
-      setFilteredFoods((prevFoods) =>
-        prevFoods.map((food) =>
-          food.FoodID === updatedFood.FoodID ? updatedFood : food
-        )
-      );
-    } catch (error) {
-      console.error('Error modifying food:', error);
+    let standardAmount;
+    if (normalizedUnit === 'g' || normalizedUnit === 'ml') {
+      standardAmount = 100;
+    } else if (
+      normalizedUnit === 'tbsp' ||
+      normalizedUnit === 'tsp' ||
+      normalizedUnit === 'serving' ||
+      normalizedUnit === 'servings'
+    ) {
+      standardAmount = 1;
+    } else {
+      standardAmount = originalAmount;
     }
+
+    const ratio = standardAmount / originalAmount;
+
+    const standardCalories = Number(
+      parseFloat(food.FoodCalories * ratio || 0).toFixed(1)
+    );
+    const standardProtein = Number(
+      parseFloat(food.FoodProtein * ratio || 0).toFixed(1)
+    );
+    const standardCarbs = Number(
+      parseFloat(food.FoodCarbs * ratio || 0).toFixed(1)
+    );
+    const standardFat = Number(
+      parseFloat(food.FoodFat * ratio || 0).toFixed(1)
+    );
+    const standardFibre = Number(
+      parseFloat(food.FoodFibre * ratio || 0).toFixed(1)
+    );
+
+    const newMeal = {
+      id: generateUUID(),
+      date: format(new Date(), 'yyyy-MM-dd'),
+      mealType,
+      FoodName: food.FoodName || 'Unnamed Food',
+      amount: standardAmount,
+      FoodAmount: standardAmount.toString(),
+      FoodUnit: originalUnit,
+      FoodCalories: standardCalories,
+      FoodProtein: standardProtein,
+      FoodCarbs: standardCarbs,
+      FoodFat: standardFat,
+      FoodFibre: standardFibre,
+      Source: food.Source || 'Custom',
+      FoodID: food.FoodID || generateUUID()
+    };
+
+    addMeal(newMeal);
+    navigation.goBack();
   };
 
   const handleDeleteFood = async (foodToDelete) => {
     try {
-      if (user && foodToDelete.id) {
-        await customFoods.deleteFirebaseFood(foodToDelete.id, user.uid);
-      } else {
-        const foods = await customFoods.getLocalFoods();
-        const updatedFoods = foods.filter(
-          (food) => food.FoodID !== foodToDelete.FoodID
-        );
-        await AsyncStorage.setItem(
-          CUSTOM_FOODS_KEY,
-          JSON.stringify(updatedFoods)
-        );
-      }
-
-      setPersonalFoods((prevFoods) =>
-        prevFoods.filter((food) => food.FoodID !== foodToDelete.FoodID)
-      );
-      setFilteredFoods((prevFoods) =>
-        prevFoods.filter((food) => food.FoodID !== foodToDelete.FoodID)
-      );
+      await deleteCustomFood(foodToDelete);
     } catch (error) {
       console.error('Error deleting food:', error);
       Alert.alert('Error', 'Failed to delete food. Please try again.');
     }
   };
 
-  const handleAddFood = async (newFood) => {
-    setPersonalFoods((prevFoods) => {
-      const updated = [...prevFoods, newFood];
-      setFilteredFoods([...initialFoods, ...updated]);
-      return updated;
-    });
-  };
-
   const gotoAddScreen = () => {
     navigation.navigate('FoodAddScreen', {
-      onAdd: handleAddFood
+      onAdd: (newFood) => {
+        addCustomFood(newFood);
+      }
     });
   };
 
-  const gotoModifyScreen = (food) =>
+  const handleModifyFood = async (updatedFood) => {
+    try {
+      await updateCustomFood(updatedFood);
+      navigation.goBack();
+    } catch (error) {
+      console.error('Error modifying food:', error);
+      Alert.alert('Error', 'Failed to modify food.');
+    }
+  };
+
+  const gotoModifyScreen = (food) => {
     navigation.navigate('FoodModifyScreen', {
       food,
       onModify: handleModifyFood
     });
+  };
 
   const gotoFoodView = (food) => {
     navigation.navigate('FoodViewScreen', {
@@ -179,6 +185,7 @@ const FoodOverviewScreen = () => {
     });
   };
 
+  // View --------------------------------
   return (
     <Screen>
       <View style={styles.searchContainer}>
@@ -191,22 +198,22 @@ const FoodOverviewScreen = () => {
             debouncedSearch(text);
           }}
         />
-
         <TouchableOpacity style={styles.addButton} onPress={gotoAddScreen}>
           <Icons.Add />
         </TouchableOpacity>
       </View>
+
       {isLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size='large' color='#665679' />
         </View>
       ) : (
         <>
-          {personalFoods.length > 0 && (
+          {customFoodsList.length > 0 && (
             <>
               <Text style={styles.sectionHeader}>Custom Items</Text>
               <FoodOverview
-                foods={personalFoods}
+                foods={customFoodsList}
                 onSelect={handleSelectFood}
                 onView={gotoFoodView}
                 onEdit={gotoModifyScreen}
@@ -214,12 +221,11 @@ const FoodOverviewScreen = () => {
               />
             </>
           )}
+          <Text style={styles.sectionHeader}>Food Examples</Text>
           <FoodOverview
-            foods={filteredFoods.filter((f) => f.Source !== 'Custom')}
+            foods={filteredFoods}
             onSelect={handleSelectFood}
             onView={gotoFoodView}
-            onEdit={null}
-            onDelete={null}
           />
         </>
       )}

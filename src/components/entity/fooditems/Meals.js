@@ -58,6 +58,7 @@ const Meals = () => {
   const handleModifyFood = (updatedFood) => {
     setMealsByDate((prevMealsByDate) => {
       const newMealsByDate = { ...prevMealsByDate };
+
       Object.keys(newMealsByDate).forEach((date) => {
         const meals = newMealsByDate[date];
         if (meals) {
@@ -66,26 +67,16 @@ const Meals = () => {
               meals[mealType] = meals[mealType].map((food) => {
                 if (food.FoodID === updatedFood.FoodID) {
                   const baseAmount = food.BaseAmount || 100;
-                  const baseCalories = food.BaseCalories || food.FoodCalories;
                   const ratio = updatedFood.FoodAmount / baseAmount;
 
                   return {
+                    ...food,
                     ...updatedFood,
-                    uniqueID: food.uniqueID,
-                    FoodAmount: updatedFood.FoodAmount,
-                    FoodCalories: Math.round(baseCalories * ratio),
-                    FoodProtein: Math.round(
-                      (food.BaseProtein || food.FoodProtein) * ratio
-                    ),
-                    FoodCarbs: Math.round(
-                      (food.BaseCarbs || food.FoodCarbs) * ratio
-                    ),
-                    FoodFat: Math.round((food.BaseFat || food.FoodFat) * ratio),
-                    BaseAmount: baseAmount,
-                    BaseCalories: baseCalories,
-                    BaseProtein: food.BaseProtein || food.FoodProtein,
-                    BaseCarbs: food.BaseCarbs || food.FoodCarbs,
-                    BaseFat: food.BaseFat || food.FoodFat
+                    FoodCalories: Math.round(food.BaseCalories * ratio),
+                    FoodProtein: Math.round(food.BaseProtein * ratio),
+                    FoodCarbs: Math.round(food.BaseCarbs * ratio),
+                    FoodFat: Math.round(food.BaseFat * ratio),
+                    FoodFibre: Math.round(food.BaseFibre * ratio)
                   };
                 }
                 return food;

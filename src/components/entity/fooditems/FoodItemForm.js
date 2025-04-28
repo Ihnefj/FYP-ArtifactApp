@@ -12,6 +12,7 @@ const defaultFood = {
   FoodProtein: null,
   FoodCarbs: null,
   FoodFat: null,
+  FoodFibre: null,
   FoodImage:
     'https://fruitgals.com.ph/storage/app/media/Screen%20Shot%202023-06-19%20at%209.11.17%20AM.png'
 };
@@ -100,6 +101,13 @@ const FoodItemForm = ({
           label='Fat'
           value={food.FoodFat}
           onChange={(value) => handleChange('FoodFat', value)}
+          required
+        />
+
+        <Form.InputText
+          label='Fibre'
+          value={food.FoodFibre}
+          onChange={(value) => handleChange('FoodFibre', value)}
           required
         />
 

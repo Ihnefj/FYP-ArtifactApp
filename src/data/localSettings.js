@@ -1,8 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { weightData } from './weightData';
 
+// Initialisations ---------------------
 const PROFILE_KEY = '@local_profile';
 const GOALS_KEY = '@local_goals';
 
+// State -------------------------------
+// Handlers ----------------------------
 export const localSettings = {
   async getProfile() {
     try {
@@ -44,8 +48,11 @@ export const localSettings = {
     try {
       await AsyncStorage.removeItem(PROFILE_KEY);
       await AsyncStorage.removeItem(GOALS_KEY);
+      await weightData.clearLocalWeightEntries();
     } catch (error) {
       console.error('Error clearing local settings:', error);
     }
   }
 };
+
+// View --------------------------------

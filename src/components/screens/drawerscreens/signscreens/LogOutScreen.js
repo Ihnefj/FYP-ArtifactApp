@@ -3,6 +3,7 @@ import { Alert } from 'react-native';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../../../FirebaseConfig';
 import { useCallback } from 'react';
+import { CommonActions } from '@react-navigation/native';
 
 const LogOutScreen = ({ navigation }) => {
   // Initialisations -------------------------
@@ -25,10 +26,19 @@ const LogOutScreen = ({ navigation }) => {
             onPress: async () => {
               try {
                 await signOut(auth);
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: 'Sign in' }]
-                });
+                navigation.dispatch(
+                  CommonActions.reset({
+                    index: 0,
+                    routes: [
+                      {
+                        name: 'Sign in / Register',
+                        state: {
+                          routes: [{ name: 'SignInScreen' }]
+                        }
+                      }
+                    ]
+                  })
+                );
               } catch (error) {
                 Alert.alert('Error', 'Failed to log out: ' + error.message);
                 navigation.goBack();

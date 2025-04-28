@@ -1,35 +1,52 @@
 import Screen from '../../layout/Screen';
 import FoodView from '../../entity/fooditems/FoodView';
-import Meals from '../../entity/fooditems/Meals';
 import { useEffect, useState } from 'react';
 import initialFoods from '../../../data/foods.js';
 import { ScrollView } from 'react-native';
 import { useAuth } from '../../../contexts/AuthContext';
 import { customFoods } from '../../../data/customFoods';
 import { Alert } from 'react-native';
+import { useMeals } from '../../../contexts/MealsContext';
 
 const FoodViewScreen = ({ navigation, route }) => {
   // Initialisations -------------------------
-  const { food, onDelete, onModify, mealType } = route.params;
-  const mealsInstance = Meals();
+  const { food: initialFood, mealType, onDelete, onModify } = route.params;
   const { user } = useAuth();
+  const { handleDeleteFood } = useMeals();
 
   // State -----------------------------------
-  const [updatedFood, setUpdatedFood] = useState(food);
+  const [food, setFood] = useState(() => {
+    const baseFood = initialFoods.find((f) => f.FoodID === initialFood.FoodID);
+    if (baseFood) {
+      return {
+        ...baseFood,
+        ...initialFood,
+        amount: initialFood.amount || baseFood.amount || 100,
+        FoodCalories: initialFood.FoodCalories || baseFood.FoodCalories,
+        FoodProtein: initialFood.FoodProtein || baseFood.FoodProtein,
+        FoodCarbs: initialFood.FoodCarbs || baseFood.FoodCarbs,
+        FoodFat: initialFood.FoodFat || baseFood.FoodFat,
+        FoodFibre: initialFood.FoodFibre || baseFood.FoodFibre
+      };
+    }
+    return initialFood;
+  });
 
   useEffect(() => {
-    setUpdatedFood(() => {
+    setFood(() => {
       const baseFood = initialFoods.find((f) => f.FoodID === food.FoodID);
       if (baseFood) {
-        const newFoodCalories =
-          (food.FoodAmount / baseFood.FoodAmount) * baseFood.FoodCalories;
         return {
           ...baseFood,
           uniqueID: food.uniqueID,
           FoodAmount: food.FoodAmount,
-          FoodCalories: newFoodCalories,
-          BaseCalories: baseFood.FoodCalories,
-          BaseAmount: baseFood.FoodAmount
+          FoodCalories: food.FoodCalories,
+          BaseCalories: food.BaseCalories || baseFood.FoodCalories,
+          BaseAmount: food.BaseAmount || baseFood.FoodAmount,
+          BaseProtein: food.BaseProtein || baseFood.FoodProtein,
+          BaseCarbs: food.BaseCarbs || baseFood.FoodCarbs,
+          BaseFat: food.BaseFat || baseFood.FoodFat,
+          BaseFibre: food.BaseFibre || baseFood.FoodFibre
         };
       }
       return food;
@@ -39,14 +56,13 @@ const FoodViewScreen = ({ navigation, route }) => {
   // Handlers --------------------------------
   const handleDelete = async () => {
     try {
-      if (user && updatedFood.id) {
-        await customFoods.deleteFirebaseFood(updatedFood.id, user.uid);
+      if (user && food.id) {
+        await customFoods.deleteFirebaseFood(food.id, user.uid);
       }
-
       if (onDelete) {
-        onDelete(updatedFood);
+        onDelete(food);
       }
-
+      handleDeleteFood(food, mealType);
       navigation.goBack();
     } catch (error) {
       console.error('Error deleting food:', error);
@@ -56,12 +72,17 @@ const FoodViewScreen = ({ navigation, route }) => {
 
   const gotoModifyScreen = () =>
     navigation.navigate('FoodModifyScreen', {
-      food: updatedFood,
-      onModify: (newFood) => {
-        if (onModify) {
-          onModify(newFood);
+      food: food,
+      onModify: async (newFood) => {
+        try {
+          if (onModify) {
+            onModify(newFood);
+          }
+          navigation.goBack();
+        } catch (error) {
+          console.error('Error updating food:', error);
+          Alert.alert('Error', 'Failed to update food item');
         }
-        navigation.goBack();
       }
     });
 
@@ -70,7 +91,7 @@ const FoodViewScreen = ({ navigation, route }) => {
     <Screen>
       <ScrollView>
         <FoodView
-          food={updatedFood}
+          food={food}
           onDelete={handleDelete}
           onModify={gotoModifyScreen}
         />

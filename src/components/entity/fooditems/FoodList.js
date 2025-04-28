@@ -6,11 +6,12 @@ const FoodList = ({ foods = [], mealType, onSelect, onDelete, onUpdate }) => {
   // State -------------------------------
   // Handlers ----------------------------
   // View --------------------------------
+
   return (
     <ScrollView>
       {foods.map((food) => (
         <FoodItem
-          key={food.uniqueID}
+          key={food.id}
           food={food}
           onSelect={() => onSelect(food, mealType)}
           onDelete={() => onDelete(food, mealType)}
